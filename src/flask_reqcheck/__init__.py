@@ -1,0 +1,1 @@
+from .decoration import validate

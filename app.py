@@ -1,7 +1,7 @@
 from flask import Flask, request
 from pydantic import BaseModel, Field
 
-from flask_reqcheck.decoration import validate
+from flask_reqcheck import validate
 
 
 class PathModel(BaseModel):
