@@ -82,6 +82,11 @@ def validate(
                 validate_path_params(request.view_args, path, spec.annotations) or None
             )
 
+            # This is an alternative approach that will convert the kwargs directly
+            # kwargs = (
+            #     validate_path_params(request.view_args, path, spec.annotations) or {}
+            # )
+
             # Validate the query parameters
             request.query_params = validate_query_params(request.args.to_dict(), query)
 
