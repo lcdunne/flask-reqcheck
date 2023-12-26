@@ -58,21 +58,28 @@ def has_body(request: Request) -> bool:
     return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers
 
 
+def validate_form_params(form_data: dict, form_model: BaseModel):
+    return as_model(form_data, form_model)
+
+
 def validate(
-    body: BaseModel = None, query: BaseModel = None, path: BaseModel = None
+    body: BaseModel | None = None,
+    query: BaseModel | None = None,
+    path: BaseModel | None = None,
+    form: BaseModel | None = None,
 ) -> Callable:
     def decorator(f: Callable):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            if not any([body, query, path]):
+            if not any([body, query, path, form]):
                 current_app.logger.debug(
                     "Validate decorator was used but no validation model was provided."
                 )
 
             # Validate the path parameters
             spec = getfullargspec(f)  # Get args & type hints from the route function
-            request.path_params = validate_path_params(
-                request.view_args, path, spec.annotations
+            request.path_params = (
+                validate_path_params(request.view_args, path, spec.annotations) or None
             )
 
             # Validate the query parameters
@@ -80,8 +87,12 @@ def validate(
 
             # Validate the request body - may need some more attention
             request.body = None
-            if has_body(request):
+            if has_body(request) and not request.form:
                 request.body = validate_body(request.get_json(), body)
+
+            if request.form:
+                print(dir(request))
+                request.form_data = validate_form_params(request.form, form)
             return f(*args, **kwargs)
 
         return wrapper
