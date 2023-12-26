@@ -10,9 +10,7 @@ I had already began implementing this before I saw that [Flask-Pydantic](https:/
 
 ## Installation
 
-```bash
-pip install flask-reqcheck
-```
+pending
 
 ## Usage
 
@@ -21,6 +19,12 @@ pending
 ## Contributing
 
 pending
+
+## To-Do
+
+- Handle query parameters:
+  - list
+  - multiple definition (see Pet Store's [findPetsByTags](https://petstore3.swagger.io/#/pet/findPetsByTags))
 
 ## License
 

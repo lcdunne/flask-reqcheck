@@ -71,8 +71,8 @@ def validate(
 
             # Validate the path parameters
             spec = getfullargspec(f)  # Get args & type hints from the route function
-            request.path_params = validate_path_params(
-                request.view_args, path, spec.annotations
+            request.path_params = (
+                validate_path_params(request.view_args, path, spec.annotations) or None
             )
 
             # Validate the query parameters
