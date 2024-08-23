@@ -6,6 +6,8 @@ from typing import Any, Callable
 from flask import Request, abort, current_app, request
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
+from flask_reqcheck.valid_request import ValidRequest
+
 
 def validate_function_arg(arg_name: str, arg_value: Any) -> Any:
     return TypeAdapter(arg_name).validate_python(arg_value)
@@ -81,6 +83,8 @@ def validate(
                 current_app.logger.debug(
                     "Validate decorator was used but no validation model was provided."
                 )
+
+            validated = ValidRequest()
 
             # Validate the path parameters
             typed_args = get_typed_function_arguments(f)
