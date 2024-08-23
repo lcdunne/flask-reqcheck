@@ -1,3 +1,7 @@
+# Project
+example/
+app.py
+
 .flaskenv
 
 # Byte-compiled / optimized / DLL files
