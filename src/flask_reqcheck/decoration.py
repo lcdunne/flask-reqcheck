@@ -62,6 +62,12 @@ def validate_form_params(form_data: dict, form_model: BaseModel):
     return as_model(form_data, form_model)
 
 
+def get_typed_function_arguments(f: Callable) -> dict[str, Any]:
+    # Get args & type hints from the route function
+    spec = getfullargspec(f)
+    return spec.annotations
+
+
 def validate(
     body: BaseModel | None = None,
     query: BaseModel | None = None,
@@ -77,15 +83,11 @@ def validate(
                 )
 
             # Validate the path parameters
-            spec = getfullargspec(f)  # Get args & type hints from the route function
-            request.path_params = (
-                validate_path_params(request.view_args, path, spec.annotations) or None
+            typed_args = get_typed_function_arguments(f)
+            path_params = (
+                validate_path_params(request.view_args, path, typed_args) or None
             )
-
-            # This is an alternative approach that will convert the kwargs directly
-            # kwargs = (
-            #     validate_path_params(request.view_args, path, spec.annotations) or {}
-            # )
+            validated.path_params = path_params
 
             # Validate the query parameters
             request.query_params = validate_query_params(request.args.to_dict(), query)
