@@ -12,8 +12,14 @@ I had already begun implementing this before I saw that [Flask-Pydantic](https:/
 
 Not currently on PyPi. Clone the repo and then run the following:
 
-```python
+```sh
 pip install <path to flask-reqcheck>
+```
+
+For development, install the test dependencies - e.g.:
+
+```sh
+python -m pip install -e '.[dev]'
 ```
 
 ## Usage
