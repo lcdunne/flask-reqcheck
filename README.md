@@ -1,10 +1,10 @@
-# flask-reqcheck
+# flask-request-check
 
 Validate requests to a flask server using Pydantic models.
 
 ## Motivation
 
-The purpose of Flask-Reqcheck is to check (i.e. validate) requests against a [Pydantic](https://docs.pydantic.dev/latest/) model, and to implement this in the most straightforward way possible.
+The purpose of Flask-Request-Check is to check (i.e. validate) requests against a [Pydantic](https://docs.pydantic.dev/latest/) model, and to implement this in the most straightforward way possible.
 
 I had already begun implementing this before I saw that [Flask-Pydantic](https://github.com/bauerji/flask-pydantic) exists. Since it started as a small personal project I decided to continue with my own implementation, especially since Flask-Pydantic no longer works with the latest Pydantic 2.x. Nevertheless, this project is partly inspired by Flask-Pydantic.
 
@@ -13,7 +13,7 @@ I had already begun implementing this before I saw that [Flask-Pydantic](https:/
 Not currently on PyPi. Clone the repo and then run the following:
 
 ```sh
-pip install <path to flask-reqcheck>
+pip install <path to flask-request-check>
 ```
 
 For development, install the test dependencies - e.g.:
@@ -37,8 +37,8 @@ For a full example of how to use this, see `example/app.py`.
 Simply type-hinting the Flask route function arguments will result in those parameters being validated:
 
 ```python
-from flask_reqcheck.decoration import validate
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request-check.decoration import validate
+from flask_request-check.valid_request import get_valid_request
 
 ...
 
@@ -56,8 +56,8 @@ If type hints are omitted, the fallback is to Flask's default - either converter
 Query parameters require you to write a Pydantic model that represents the query parameters expected for the route. For example:
 
 ```python
-from flask_reqcheck.decoration import validate
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request-check.decoration import validate
+from flask_request-check.valid_request import get_valid_request
 from pydantic import BaseModel
 
 
@@ -85,8 +85,8 @@ If no query model is given to the `@validate` decorator then no query parameters
 For request bodies we must define a model for what we expect, and then pass that class into the validate decorator:
 
 ```python
-from flask_reqcheck.decoration import validate
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request-check.decoration import validate
+from flask_request-check.valid_request import get_valid_request
 from pydantic import BaseModel
 
 class BodyModel(BaseModel):
@@ -108,8 +108,8 @@ def request_with_body():
 Define a model for the form and then pass the class into the validate decorator:
 
 ```python
-from flask_reqcheck.decoration import validate
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request-check.decoration import validate
+from flask_request-check.valid_request import get_valid_request
 from pydantic import BaseModel
 
 class FormModel(BaseModel):
@@ -127,12 +127,6 @@ def request_with_form_data():
 ## Contributing
 
 pending
-
-## To-Do
-
-- Handle query parameters:
-  - list
-  - multiple definition (see Pet Store's [findPetsByTags](https://petstore3.swagger.io/#/pet/findPetsByTags))
 
 ## License
 
