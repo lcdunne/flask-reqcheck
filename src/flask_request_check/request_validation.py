@@ -11,9 +11,24 @@ class PathParameterValidator:
         self.model = model
 
     def validate(self, f: Callable) -> BaseModel | None:
-        """
-        In the case when path params are required but none are found, the request would
-        fail with a 404 anyway.
+        """Validate path parameters.
+
+        This method retrieves the path parameters and attempts to validate them. If a
+        model is provided, it validates the parameters against the model. If no model is
+        provided, it validates the parameters against the type hints in the function
+        declaration. If no type hints are given, flask's default validation will be
+        used as a fallback.
+
+        Parameters
+        ----------
+        f : Callable
+            The function to validate against if no model is provided.
+
+        Returns
+        -------
+        BaseModel | None
+            The validated path parameters as a BaseModel instance, or None if no
+            parameters are found.
         """
         path_params = self.get_args_from_route_declaration()  # arg: value
         if path_params:

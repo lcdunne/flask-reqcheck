@@ -21,7 +21,15 @@ class ValidRequest:
 
 
 def get_valid_request() -> ValidRequest:
-    print(g, g.__dict__)
+    """Get the valid request from the global context.
+
+    If the valid request is not in the global context, creates a new one and store it.
+
+    Returns
+    -------
+    ValidRequest
+        The valid request instance.
+    """
     if "valid_request" not in g:
         g.valid_request = ValidRequest()
     return g.valid_request
