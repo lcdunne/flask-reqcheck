@@ -78,12 +78,6 @@ class PathParameterValidator:
         return TypeAdapter(target_type).validate_python(value)
 
 
-def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
-    """Helper to create a dynamic pydantic BaseModel given a name and kwargs."""
-    fields = {arg: (type(val), ...) for arg, val in kwargs.items()}
-    return create_model(name, **fields)  # type: ignore
-
-
 class QueryParameterValidator:
     def __init__(self, model: Type[BaseModel] | None = None):
         self.model = model
@@ -128,6 +122,12 @@ class FormDataValidator:
 
     def validate(self):
         return as_model(request.form, self.model)
+
+
+def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
+    """Helper to create a dynamic pydantic BaseModel given a name and kwargs."""
+    fields = {arg: (type(val), ...) for arg, val in kwargs.items()}
+    return create_model(name, **fields)  # type: ignore
 
 
 def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
