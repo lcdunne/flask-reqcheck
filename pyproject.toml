@@ -23,4 +23,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "python-dotenv"]
+dev = [
+    "Pallets-Sphinx-Themes",
+    "pytest",
+    "python-dotenv",
+    "sphinx"
+]
