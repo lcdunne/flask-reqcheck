@@ -66,6 +66,13 @@ def request_with_query_parameters():
     return {k: v.model_dump() if v is not None else v for k, v in vreq.__dict__.items()}
 
 
+@app.get("/query/with/<arg1>/path/<arg2>")
+@validate(query=QueryModel)
+def request_with_query_and_path_parameters(arg1: int, arg2: uuid.UUID):
+    vreq = get_valid_request()
+    return {k: v.model_dump() if v is not None else v for k, v in vreq.__dict__.items()}
+
+
 @app.post("/body")
 @validate(body=BodyModel)
 def request_with_body():
