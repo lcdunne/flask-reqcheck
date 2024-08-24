@@ -3,7 +3,7 @@ import uuid
 from flask import Flask
 from pydantic import BaseModel
 
-from flask_request_check.decorator import validate
+from flask_request_check import validate
 from flask_request_check.valid_request import get_valid_request
 
 app = Flask(__name__)
