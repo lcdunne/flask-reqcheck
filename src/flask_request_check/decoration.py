@@ -6,7 +6,7 @@ from typing import Any, Callable, Type
 from flask import abort, current_app, g, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request_check.valid_request import get_valid_request
 
 
 def validate_path_params(

@@ -3,8 +3,8 @@ import uuid
 from flask import Flask
 from pydantic import BaseModel
 
-from flask_reqcheck.decoration import validate
-from flask_reqcheck.valid_request import get_valid_request
+from flask_request_check.decoration import validate
+from flask_request_check.valid_request import get_valid_request
 
 app = Flask(__name__)
 setattr(app.json, "sort_keys", False)
