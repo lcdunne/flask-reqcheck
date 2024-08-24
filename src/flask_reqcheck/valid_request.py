@@ -1,9 +1,8 @@
+from flask import g
 from pydantic import BaseModel
 
 
 class ValidRequest:
-    """TODO: Re-init this at start of each request context"""
-
     def __init__(
         self,
         path_params: BaseModel | None = None,
@@ -19,3 +18,10 @@ class ValidRequest:
         self.form = form
         self.headers = headers
         self.cookies = cookies
+
+
+def get_valid_request() -> ValidRequest:
+    print(g, g.__dict__)
+    if "valid_request" not in g:
+        g.valid_request = ValidRequest()
+    return g.valid_request
