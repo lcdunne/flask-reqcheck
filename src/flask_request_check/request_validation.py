@@ -6,101 +6,128 @@ from flask import abort, current_app, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 
 
-def validate_path_params(
-    f: Callable, path_model: Type[BaseModel] | None
-) -> BaseModel | None:
-    """
-    In the case when path params are required but none are found, the request would
-    fail with a 404 anyway.
-    """
-    path_params = get_args_from_route_declaration()  # arg: value
-    if path_params:
-        if path_model is not None:
-            return validate_path_params_from_model(path_model, path_params)
-        return validate_path_params_from_declaration(f, path_params)
-    return
+class PathParameterValidator:
+    def __init__(self, model: Type[BaseModel] | None = None):
+        self.model = model
+
+    def validate(self, f: Callable) -> BaseModel | None:
+        """
+        In the case when path params are required but none are found, the request would
+        fail with a 404 anyway.
+        """
+        path_params = self.get_args_from_route_declaration()  # arg: value
+        if path_params:
+            if self.model is not None:
+                return self.validate_from_model(path_params)
+            return self.validate_from_declaration(f, path_params)
+        return
+
+    def get_args_from_route_declaration(self) -> dict[str, Any] | None:
+        """Get all path parameters.
+
+        This will extract a dict containing path parameters names and their
+        corresponding values provided in the request.
+        """
+        return request.view_args
+
+    def validate_from_model(self, path_params: dict[str, Any]) -> BaseModel | None:
+        return as_model(path_params, self.model)
+
+    def validate_from_declaration(
+        self, f: Callable, path_params: dict[str, Any]
+    ) -> BaseModel:
+        function_arg_types = self.get_function_arg_types(f)
+        validated_path_params = self.validate_path_params(
+            path_params, function_arg_types
+        )
+        path_model = self.model or create_dynamic_model(
+            "PathParams", **validated_path_params
+        )
+
+        return path_model.model_validate(validated_path_params)
+
+    def get_function_arg_types(self, f: Callable) -> dict[str, Any]:
+        """Get all function args and their type hints.
+
+        Excludes arguments for which no types are given. If no arguments are hinted,
+        returns an empty dict.
+        """
+        spec = getfullargspec(f)
+        return spec.annotations
+
+    def validate_path_params(
+        self,
+        path_params: dict[str, Any],
+        function_arg_types: dict[str, Type],
+    ) -> dict[str, Any]:
+        validated_path_params = {}
+        for arg, value in path_params.items():
+            target_type = self.get_target_type(arg, value, function_arg_types)
+            validated_value = self.validate_value(value, target_type)
+            validated_path_params[arg] = validated_value
+        return validated_path_params
+
+    def get_target_type(
+        self, arg: str, value: Any, function_arg_types: dict[str, Type]
+    ) -> Type:
+        """Get the expected type for the given argument, falling back to the value's
+        current type if not specified."""
+        return function_arg_types.get(arg, type(value))
+
+    def validate_value(self, value: Any, target_type: Type) -> Any:
+        return TypeAdapter(target_type).validate_python(value)
 
 
-def get_args_from_route_declaration() -> dict[str, Any] | None:
-    """Get all path parameters.
-
-    This will extract a dict containing path parameters names and their corresponding
-    values provided in the request.
-    """
-    return request.view_args
-
-
-def validate_path_params_from_model(
-    model: Type[BaseModel] | None, path_params: dict[str, Any]
-) -> BaseModel | None:
-    return as_model(path_params, model)
-
-
-def validate_path_params_from_declaration(
-    f: Callable,
-    path_params: dict[str, Any],
-    path_model: Type[BaseModel] | None = None,
-) -> BaseModel:
-    function_arg_types = get_function_arg_types(f)  # arg: type
-    # Validate based on the function signature and its types if present
-    #   ... otherwise, fallback on the defaults (flask type-converted).
-    validated_path_params = {}
-    for arg, value in path_params.items():
-        target_type = function_arg_types.get(arg, type(value))
-        x = TypeAdapter(target_type).validate_python(value)
-        validated_path_params[arg] = x
-
-    if path_model is None:
-        path_model = create_dynamic_model("PathParams", **validated_path_params)
-
-    return path_model.model_validate(validated_path_params)
-
-
-def get_function_arg_types(f: Callable) -> dict[str, Any]:
-    """Get all function args and their type hints.
-
-    Excludes arguments for which no types are given. If no arguments are hinted,
-    returns an empty dict.
-    """
-    spec = getfullargspec(f)
-    return spec.annotations
-
-
-def create_dynamic_model(name: str, **kwargs: Any) -> Type[BaseModel]:
-    """Create a dynamic pydantic BaseModel given a name and kwargs."""
+def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
+    """Helper to create a dynamic pydantic BaseModel given a name and kwargs."""
     fields = {arg: (type(val), ...) for arg, val in kwargs.items()}
     return create_model(name, **fields)  # type: ignore
 
 
-def validate_query_params(query_model: Type[BaseModel] | None) -> BaseModel | None:
-    query_params = extract_query_params_as_dict()
-    if query_params and query_model is not None:
-        return as_model(query_params, query_model)
+class QueryParameterValidator:
+    def __init__(self, model: Type[BaseModel] | None = None):
+        self.model = model
 
-    current_app.logger.warning(
-        "Query parameters were submitted, but no `query_model` was added for validation"
-    )
-    return
+    def validate(self) -> BaseModel | None:
+        query_params = self.extract_query_params_as_dict()
+        if query_params and self.model is not None:
+            return as_model(query_params, self.model)
 
-
-def extract_query_params_as_dict() -> dict:
-    """Extract query parameters to dict, accounting for arrays."""
-    return {
-        key: values[0] if len(values) == 1 else values
-        for key, values in request.args.lists()
-    }
-
-
-def validate_body_data(body_model: Type[BaseModel] | None) -> BaseModel | None:
-    if not request_has_body() or request.form:
+        current_app.logger.warning(
+            "Query parameters were submitted, but no `query_model` was "
+            "added for validation"
+        )
         return
 
-    request_body = request.get_json()  # Raises 415 if not json
+    def extract_query_params_as_dict(self) -> dict:
+        """Extract query parameters to dict, accounting for arrays."""
+        return {
+            key: values[0] if len(values) == 1 else values
+            for key, values in request.args.lists()
+        }
 
-    if request_body and body_model is None:
-        abort(400, "Unexpected data was provided")
 
-    return as_model(request_body, body_model)
+class BodyDataValidator:
+    def __init__(self, model: Type[BaseModel] | None = None):
+        self.model = model
+
+    def validate(self) -> BaseModel | None:
+        if not request_has_body() or request.form:
+            return
+
+        request_body = request.get_json()  # Raises 415 if not json
+        if request_body and self.model is None:
+            abort(400, "Unexpected data was provided")
+
+        return as_model(request_body, self.model)
+
+
+class FormDataValidator:
+    def __init__(self, model: Type[BaseModel] | None = None):
+        self.model = model
+
+    def validate(self):
+        return as_model(request.form, self.model)
 
 
 def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
@@ -117,7 +144,3 @@ def request_has_body() -> bool:
     # RFC7230 - 3.3. Message Body: Presence of body in request is signaled by
     #   a Content-Length or Transfer-Encoding header field.
     return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers
-
-
-def validate_form_data(form_model: Type[BaseModel] | None):
-    return as_model(request.form, form_model)
