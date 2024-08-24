@@ -1,1 +1,1 @@
-from .decoration import validate
+from .decorator import validate

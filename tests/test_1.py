@@ -1,4 +1,4 @@
-from flask_request_check.decoration import validate
+from flask_request_check.decorator import validate
 
 
 def test_main(client):
