@@ -3,10 +3,10 @@ from functools import wraps
 from inspect import getfullargspec
 from typing import Any, Callable, Type
 
-from flask import Request, abort, current_app, g, request
+from flask import abort, current_app, g, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 
-from flask_reqcheck.valid_request import ValidRequest, get_valid_request
+from flask_reqcheck.valid_request import get_valid_request
 
 
 def validate_path_params(
@@ -17,7 +17,6 @@ def validate_path_params(
     fail with a 404 anyway.
     """
     path_params = get_args_from_route_declaration()  # arg: value
-    print(path_params)
     if path_params:
         if path_model is not None:
             return validate_path_params_from_model(path_model, path_params)
@@ -50,17 +49,13 @@ def validate_path_params_from_declaration(
     #   ... otherwise, fallback on the defaults (flask type-converted).
     validated_path_params = {}
     for arg, value in path_params.items():
-        # Iterate all given args and find the
-        target_type = function_arg_types.get(arg)
-        if not target_type:
-            target_type = type(value)
-            current_app.logger.debug(
-                "No validation for %s=%s (defaulting to str)", arg, value
-            )
+        target_type = function_arg_types.get(arg, type(value))
         x = TypeAdapter(target_type).validate_python(value)
         validated_path_params[arg] = x
+
     if path_model is None:
         path_model = create_dynamic_model("PathParams", **validated_path_params)
+
     return path_model.model_validate(validated_path_params)
 
 
@@ -84,10 +79,7 @@ def validate_query_params(query_model: Type[BaseModel] | None) -> BaseModel | No
     query_params = extract_query_params_as_dict()
     if query_params and query_model is not None:
         return as_model(query_params, query_model)
-        # print("PARAMS:", query_params)
-        # return query_model.model_validate(query_params)
 
-    # NOTE: Submitting unhandled query parameters should just do nothing.
     current_app.logger.warning(
         "Query parameters were submitted, but no `query_model` was added for validation"
     )
@@ -148,12 +140,6 @@ def validate(
             validated.query_params = validate_query_params(query_model=query)
             validated.body = validate_body(body_model=body)
             validated.form = validate_form_data(form_model=form)
-
-            print("Validated path parameters: ", validated.path_params)
-            print("Validated query parameters: ", validated.query_params)
-            print("Validated body: ", validated.body)
-            print("Validated form: ", validated.form)
-
             g.valid_request = validated
             return f(*args, **kwargs)
 
