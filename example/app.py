@@ -3,11 +3,18 @@ import uuid
 from flask import Flask
 from pydantic import BaseModel
 
-from flask_request_check import validate
+from flask_request_check import validate, validate_path, validate_query
 from flask_request_check.valid_request import get_valid_request
 
 app = Flask(__name__)
 setattr(app.json, "sort_keys", False)
+
+
+class PathModel(BaseModel):
+    a: str
+    b: int
+    c: int
+    d: uuid.UUID
 
 
 class QueryModel(BaseModel):
@@ -66,9 +73,10 @@ def request_with_query_parameters():
     return {k: v.model_dump() if v is not None else v for k, v in vreq.__dict__.items()}
 
 
-@app.get("/query/with/<arg1>/path/<arg2>")
-@validate(query=QueryModel)
-def request_with_query_and_path_parameters(arg1: int, arg2: uuid.UUID):
+@app.get("/query/with/path/<a>/<b>/<c>/<d>")
+@validate_path(path=PathModel)
+@validate_query(query=QueryModel)
+def request_with_query_and_path_parameters(a, b, c, d):
     vreq = get_valid_request()
     return {k: v.model_dump() if v is not None else v for k, v in vreq.__dict__.items()}
 
