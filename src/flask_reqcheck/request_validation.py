@@ -11,7 +11,7 @@ class PathParameterValidator:
         self.model = model
 
     def validate(self, f: Callable) -> BaseModel | None:
-        """Validate path parameters.
+        """Validate path parameters
 
         This method retrieves the path parameters and attempts to validate them. If a
         model is provided, it validates the parameters against the model. If no model is
