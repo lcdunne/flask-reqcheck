@@ -8,13 +8,13 @@ The purpose of Flask-Reqcheck is to simply validate requests against a [Pydantic
 
 ## Installation
 
-Not currently on PyPi. Clone the repo and then run the following:
+Run the following (preferably inside a virtual environment):
 
 ```sh
-pip install <path to flask-reqcheck>
+pip install flask-reqcheck
 ```
 
-For development, install the test dependencies - e.g.:
+For development, clone the repository and install it locally, along with the test dependencies:
 
 ```sh
 python -m pip install -e '.[dev]'
