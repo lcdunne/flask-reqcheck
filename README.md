@@ -1,104 +1,131 @@
-# flask-reqcheck
+# Flask-Reqcheck
 
 Validate requests to a flask server using Pydantic models.
 
 ## Motivation
 
-The purpose of Flask-Reqcheck is to check (i.e. validate) requests against a [Pydantic](https://docs.pydantic.dev/latest/) model, and to implement this in the most straightforward way possible.
-
-I had already begun implementing this before I saw that [Flask-Pydantic](https://github.com/bauerji/flask-pydantic) exists. Since it started as a small personal project I decided to continue with my own implementation, especially since Flask-Pydantic no longer works with the latest Pydantic 2.x. Nevertheless, this project is partly inspired by Flask-Pydantic.
+The purpose of Flask-Reqcheck is to simply validate requests against a [Pydantic](https://docs.pydantic.dev/latest/) model. This is partly inspired by [Flask-Pydantic](https://github.com/bauerji/flask-pydantic), and supports Pydantic v2 and the latest version of Flask.
 
 ## Installation
 
 Not currently on PyPi. Clone the repo and then run the following:
 
-```python
+```sh
 pip install <path to flask-reqcheck>
+```
+
+For development, install the test dependencies - e.g.:
+
+```sh
+python -m pip install -e '.[dev]'
 ```
 
 ## Usage
 
-The main points for using this are:
+Here is an example of how to use this library:
 
-- import the `validate` decorator
-- write the representation classes using the `Pydantic` library
-- access the validated data in the view function using the `request.query_params`, `request.path_params`, `request.body`, and `request.form_data`.
+```python
+from flask_reqcheck import validate, get_valid_request
+from pydantic import BaseModel
+
+# Write a class (with Pydantic) to represent the expected data
+class BodyModel(BaseModel):
+    a: str
+    b: int
+    c: float
+    d: uuid.UUID
+    arr: list[int]
+
+
+@app.post("/body")
+@validate(body=BodyModel)  # Decorate the view function
+def request_with_body():
+    vreq = get_valid_request()  # Access the validated data
+    return vreq.to_dict()
+```
+
+First, import the `validate` decorator function and the `get_valid_request` helper function. The `validate` decorator accepts arguments in the form of Pydantic model classes for the request body, query parameters, path (url) parameters, and form data (headers & cookies not yet implemented). The `get_valid_request` function provides access to a `ValidRequest` object that stores the validated request data in a single place. Using this we can easily access our validated data from that object in our route functions.
+
+For a full example of how to use this, see `example/app.py`.
 
 ### Path parameters
 
+Simply type-hinting the Flask route function arguments will result in those parameters being validated, and a Pydantic model is not required in this case:
+
 ```python
-from flask_reqcheck import validate
 
-@app.get("/<petId>")
-@validate()
-def get_by_id(petId: int):
-  return {"path": request.path_params}
-
+@app.get("/path/typed/<a>/<b>/<c>/<d>")
+@validate()  # A model is not required for the path parameters
+def valid_path(a: str, b: int, c: float, d: uuid.UUID):
+    vreq = get_valid_request()
+    return vreq.as_dict()
 ```
 
-Simply type hinting the function arguments is sufficient for path parameters. This follows the Flask convention for having path parameters as the function arguments. Although we can specify converters in the path definition with `@app.get("/<int: petId>")` to convert `petId` from a string to an integer, by type hinting the argument itself the `validate()` call will automatically convert the value. However, to use the converted value, we must access it via `request.path_params` rather than directly with `petId`. This is subject to change in the future.
+If type hints are omitted from the route function signature then it just falls back to Flask's default - [converter types](https://flask.palletsprojects.com/en/3.0.x/quickstart/#variable-rules) (if provided in the path definition) or strings.
 
-You may alternatively specify a path representation with Pydantic and pass it in as with the `@validate(path=MyPathRepresentation)`.
+### Query parameters
 
-For query parameters, write a `Pydantic` class that represents the query valid parameters and their types. Specifically for query parameters, make sure that they can all default to `None`, since query parameters should always be optional:
+Query parameters require you to write a Pydantic model that represents the query parameters expected for the route. For example:
 
 ```python
-from pydantic import BaseModel
+class QueryModel(BaseModel):
+    a: str | None = None
+    b: int | None = None
+    c: float | None = None
+    d: uuid.UUID | None = None
+    arr: list[int] | None = None
+    x: str
 
-
-class PetStatus(BaseModel):
-    # Query parameter model.
-    status: str | None = None
-
-@app.get("/findByStatus")
-@validate(query=PetStatus)
-def find_by_status():
-    return {"query": request.query_params}
+@app.get("/query")
+@validate(query=QueryModel)
+def request_with_query_parameters():
+    vreq = get_valid_request()
+    return vreq.to_dict()
 ```
 
-This will perform the necessary type conversion via `Pydantic`, and exposes the query parameters as a dictionary with `request.query_params`.
+Note that most of these are defined as optional, which is often the case for query parameters. However, we can of course require query parameters by simply defining the model field as required (like `QueryModel.x` in the above).
 
-Posting a JSON body, or form data, also requires specifying a representation model:
+If no query model is given to the `@validate` decorator then no query parameters will be added to the valid request object. In that case they must be accessed normally via Flask's API.
+
+### Body data
+
+For request bodies we must define a model for what we expect, and then pass that class into the validate decorator:
 
 ```python
-from pydantic import Field
+class BodyModel(BaseModel):
+    a: str
+    b: int
+    c: float
+    d: uuid.UUID
+    arr: list[int]
 
+@app.post("/body")
+@validate(body=BodyModel)
+def request_with_body():
+    vreq = get_valid_request()
+    return vreq.to_dict()
+```
 
-class Pet(BaseModel):
-    id: int
-    name: str
-    category: dict
-    photo_urls: list[str] = Field(alias="photoUrls")
-    tags: list[dict]
-    status: str
+### Form data
 
+Define a model for the form and then pass the class into the validate decorator:
 
-class PetForm(BaseModel):
-    name: str
-    status: str
+```python
+class FormModel(BaseModel):
+    a: str
+    b: int
 
-@app.post("/")
-@validate(body=rpr.Pet)
-def create_pet():
-    return {"body": request.body}, 200
+@app.post("/form")
+@validate(form=FormModel)
+def request_with_form_data():
+    vreq = get_valid_request()
+    return vreq.to_dict()
 
-
-@app.post("/<petId>")
-@validate(form=PetForm)
-def update_pet_with_form(petId: int):
-    print("Got here")
-    return {"form": request.form_data, "path": request.path_params}
 ```
 
 ## Contributing
 
-pending
-
-## To-Do
-
-- Handle query parameters:
-  - list
-  - multiple definition (see Pet Store's [findPetsByTags](https://petstore3.swagger.io/#/pet/findPetsByTags))
+pending...
 
 ## License
 

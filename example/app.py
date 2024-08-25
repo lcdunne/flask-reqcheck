@@ -1,58 +1,97 @@
-import representations as rpr
-from error_handling import handle_errors_with_json
-from flask import Blueprint, Flask, abort, request
+import uuid
 
-from flask_reqcheck import validate
+from flask import Flask
+from flask_reqcheck import get_valid_request, validate, validate_path, validate_query
+from pydantic import BaseModel
 
 app = Flask(__name__)
-pet = Blueprint("pet", __name__, url_prefix="/pet")
+setattr(app.json, "sort_keys", False)
 
 
-@pet.get("/findByStatus")
-@validate(query=rpr.PetStatus)
-def find_by_status():
-    return {"query": request.query_params}
+class PathModel(BaseModel):
+    a: str
+    b: int
+    c: int
+    d: uuid.UUID
 
 
-@pet.get("/findByTags")
-@validate(query=rpr.PetStatus)
-def find_by_tags():
-    abort(404, "This page does not exist yet as it has not been implemented.")
-    return {"query": request.query_params}
+class QueryModel(BaseModel):
+    a: str | None = None
+    b: int | None = None
+    c: float | None = None
+    d: uuid.UUID | None = None
+    arr: list[int] | None = None
+    x: str
 
 
-@pet.get("/<petId>")
+class BodyModel(BaseModel):
+    a: str
+    b: int
+    c: float
+    d: uuid.UUID
+    arr: list[int]
+
+
+class FormModel(BaseModel):
+    a: str
+    b: int
+
+
+@app.get("/")
 @validate()
-def get_by_id(petId: int):
-    # Use via request.path_params instead of petId to ensure correct type
-    # Or type-hint the <petId> with <int:petId> to use Flask converter
-    # return {"path": request.path_params}
-    return {"path": request.path_params}
+def index():
+    return {}
 
 
-@pet.post("/")
-@validate(body=rpr.Pet)
-def create_pet():
-    return {"body": request.body}, 200
+@app.get("/path/untyped/<a>/<b>/<c>/<d>")
+@validate()
+def valid_untyped_path(a, b, c, d):
+    vreq = get_valid_request()
+    return vreq.to_dict()
 
 
-@pet.put("/")
-@validate(body=rpr.Pet)
-def update_existing_pet():
-    return {"body": request.body}, 200
+@app.get("/path/partially_typed/<a>/<b>/<c>/<d>")
+@validate()
+def valid_partially_typed_path(a, b: int, c: float, d):
+    vreq = get_valid_request()
+    return vreq.to_dict()
 
 
-@pet.post("/<petId>")
-@validate(form=rpr.PetForm)
-def update_pet_with_form(petId: int):
-    print("Got here")
-    return {"form": request.form_data, "path": request.path_params}
+@app.get("/path/typed/<a>/<b>/<c>/<d>")
+@validate()
+def valid_path(a: str, b: int, c: float, d: uuid.UUID):
+    vreq = get_valid_request()
+    return vreq.to_dict()
 
 
-app.register_blueprint(pet)
+@app.get("/query")
+@validate(query=QueryModel)
+def request_with_query_parameters():
+    vreq = get_valid_request()
+    return vreq.to_dict()
 
-for code in [400, 401, 403, 404, 405, 415, 500]:
-    app.register_error_handler(code, handle_errors_with_json)
+
+@app.get("/query/with/path/<a>/<b>/<c>/<d>")
+@validate_path(path=PathModel)
+@validate_query(query=QueryModel)
+def request_with_query_and_path_parameters(a, b, c, d):
+    vreq = get_valid_request()
+    return vreq.to_dict()
+
+
+@app.post("/body")
+@validate(body=BodyModel)
+def request_with_body():
+    vreq = get_valid_request()
+    return vreq.to_dict()
+
+
+@app.post("/form")
+@validate(form=FormModel)
+def request_with_form_data():
+    vreq = get_valid_request()
+    return vreq.to_dict()
+
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

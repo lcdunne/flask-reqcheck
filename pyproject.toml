@@ -10,12 +10,22 @@ keywords = ["Python", "Flask", "validation"]
 authors = [{name = "Lewis Dunne"}]
 readme = "README.md"
 requires-python = ">=3.11"
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "Flask",
     "pydantic",
+]
+
+[project.optional-dependencies]
+dev = [
+    "Pallets-Sphinx-Themes",
+    "pytest",
+    "python-dotenv",
+    "sphinx"
 ]
