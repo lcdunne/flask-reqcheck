@@ -1,14 +1,8 @@
 import uuid
 
 from flask import Flask
+from flask_reqcheck import get_valid_request, validate, validate_path, validate_query
 from pydantic import BaseModel
-
-from flask_request_check import (
-    get_valid_request,
-    validate,
-    validate_path,
-    validate_query,
-)
 
 app = Flask(__name__)
 setattr(app.json, "sort_keys", False)

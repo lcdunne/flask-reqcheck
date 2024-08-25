@@ -1,17 +1,17 @@
-# Flask-Request-Check
+# Flask-Reqcheck
 
 Validate requests to a flask server using Pydantic models.
 
 ## Motivation
 
-The purpose of Flask-Request-Check is to simply validate requests against a [Pydantic](https://docs.pydantic.dev/latest/) model. This is partly inspired by [Flask-Pydantic](https://github.com/bauerji/flask-pydantic), and supports Pydantic v2 and the latest version of Flask.
+The purpose of Flask-Reqcheck is to simply validate requests against a [Pydantic](https://docs.pydantic.dev/latest/) model. This is partly inspired by [Flask-Pydantic](https://github.com/bauerji/flask-pydantic), and supports Pydantic v2 and the latest version of Flask.
 
 ## Installation
 
 Not currently on PyPi. Clone the repo and then run the following:
 
 ```sh
-pip install <path to flask-request-check>
+pip install <path to flask-reqcheck>
 ```
 
 For development, install the test dependencies - e.g.:
@@ -25,7 +25,7 @@ python -m pip install -e '.[dev]'
 Here is an example of how to use this library:
 
 ```python
-from flask_request-check import validate, get_valid_request
+from flask_reqcheck import validate, get_valid_request
 from pydantic import BaseModel
 
 # Write a class (with Pydantic) to represent the expected data

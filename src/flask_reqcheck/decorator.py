@@ -2,15 +2,14 @@ from functools import wraps
 from typing import Callable, Type
 
 from flask import g
-from pydantic import BaseModel
-
-from flask_request_check.request_validation import (
+from flask_reqcheck.request_validation import (
     BodyDataValidator,
     FormDataValidator,
     PathParameterValidator,
     QueryParameterValidator,
 )
-from flask_request_check.valid_request import get_valid_request
+from flask_reqcheck.valid_request import get_valid_request
+from pydantic import BaseModel
 
 
 def validate(
