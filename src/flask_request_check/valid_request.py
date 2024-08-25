@@ -1,3 +1,5 @@
+from typing import Any
+
 from flask import g
 from pydantic import BaseModel
 
@@ -18,6 +20,12 @@ class ValidRequest:
         self.form = form
         self.headers = headers
         self.cookies = cookies
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the instance of ValidRequest to a dictionary."""
+        return {
+            k: v.model_dump() if v is not None else v for k, v in self.__dict__.items()
+        }
 
 
 def get_valid_request() -> ValidRequest:
