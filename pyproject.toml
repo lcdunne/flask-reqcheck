@@ -24,6 +24,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "black",
+    "isort",
     "Pallets-Sphinx-Themes",
     "pytest",
     "python-dotenv",
