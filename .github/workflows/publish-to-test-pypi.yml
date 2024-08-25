@@ -5,10 +5,6 @@ on:
     branches:
       - main
       - develop
-  pull_request:
-    branches:
-      - main
-      - develop
 
 jobs:
   build:
@@ -65,7 +61,7 @@ jobs:
       url: https://test.pypi.org/p/flask-reqcheck
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
-    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    if: github.ref == 'refs/heads/develop'
     steps:
       - name: Download all the dists
         uses: actions/download-artifact@v3
