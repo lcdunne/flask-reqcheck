@@ -99,14 +99,17 @@ class QueryParameterValidator:
 
     def validate(self) -> BaseModel | None:
         query_params = self.extract_query_params_as_dict()
-        if query_params and self.model is not None:
-            return as_model(query_params, self.model)
+        if not query_params:
+            return
 
-        current_app.logger.warning(
-            "Query parameters were submitted, but no `query_model` was "
-            "added for validation"
-        )
-        return
+        if self.model is None:
+            current_app.logger.warning(
+                "Query parameters were submitted, but no `query_model` was "
+                "added for validation"
+            )
+            return
+
+        return as_model(query_params, self.model)
 
     def extract_query_params_as_dict(self) -> dict:
         """Extract query parameters to dict, accounting for arrays."""
@@ -148,7 +151,8 @@ def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
 def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
     if model is not None:
         try:
-            return model(**data)  # .model_dump()
+            # TODO: Find some way to fail here if an unrecognised parameter is provided.
+            return model(**data)
         except ValidationError as e:
             # Requires ability to register a custom error handler?
             abort(400, json.loads(e.json()))

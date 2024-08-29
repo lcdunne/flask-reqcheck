@@ -1,8 +1,9 @@
 import uuid
 
 from flask import Flask
+from pydantic import BaseModel, ConfigDict
+
 from flask_reqcheck import get_valid_request, validate, validate_path, validate_query
-from pydantic import BaseModel
 
 app = Flask(__name__)
 setattr(app.json, "sort_keys", False)
@@ -30,6 +31,8 @@ class BodyModel(BaseModel):
     c: float
     d: uuid.UUID
     arr: list[int]
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class FormModel(BaseModel):
