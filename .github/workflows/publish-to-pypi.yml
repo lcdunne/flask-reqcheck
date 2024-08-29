@@ -1,14 +1,12 @@
 name: Publish Python 🐍 distribution 📦 to PyPI
 
-on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+on: push
 
 jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -41,6 +39,7 @@ jobs:
       url: https://pypi.org/p/flask-reqcheck
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
+
     steps:
       - name: Download all the dists
         uses: actions/download-artifact@v3
@@ -57,9 +56,11 @@ jobs:
     needs:
       - publish-to-pypi
     runs-on: ubuntu-latest
+
     permissions:
       contents: write # IMPORTANT: mandatory for making GitHub Releases
       id-token: write # IMPORTANT: mandatory for sigstore
+
     steps:
       - name: Download all the dists
         uses: actions/download-artifact@v3
