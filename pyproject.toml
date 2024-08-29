@@ -31,3 +31,6 @@ dev = [
     "python-dotenv",
     "sphinx"
 ]
+
+[tool.isort]
+profile = "black"
