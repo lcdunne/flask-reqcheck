@@ -18,7 +18,6 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "pallets_sphinx_themes",
-    "numpydoc",
 ]
 
 templates_path = ["_templates"]
