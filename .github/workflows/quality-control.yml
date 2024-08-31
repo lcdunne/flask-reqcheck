@@ -63,3 +63,52 @@ jobs:
         with:
           name: test-report
           path: report.xml
+
+  check-version:
+    name: Check version tag 🏷️
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.base.ref == 'main' }}
+
+    steps:
+      - name: Checkout base branch and PR code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pr
+
+      - name: Extract version from base branch pyproject.toml
+        id: extract_base_version
+        run: |
+          base_version=$(grep '^version =' base/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "::set-output name=base_version::$base_version"
+
+      - name: Extract version from PR branch pyproject.toml
+        id: extract_pr_version
+        run: |
+          pr_version=$(grep '^version =' pr/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "::set-output name=pr_version::$pr_version"
+
+      - name: Compare versions using Python
+        run: |
+          base_version="${{ steps.extract_base_version.outputs.base_version }}"
+          pr_version="${{ steps.extract_pr_version.outputs.pr_version }}"
+
+          python - <<EOF
+          import sys
+          from packaging import version
+
+          base_version = version.parse("$base_version")
+          pr_version = version.parse("$pr_version")
+
+          if pr_version <= base_version:
+              print(f"Invalid version bump ({pr_version} <= {base_version})")
+              sys.exit(1)
+          else:
+              print(f"Valid version bump ({pr_version} > {base_version})")
+          EOF
