@@ -22,7 +22,7 @@ documentation for details.
    :caption: Contents:
 
    intro
-   api
+   usage
 
 * :ref:`genindex`
 * :ref:`modindex`
