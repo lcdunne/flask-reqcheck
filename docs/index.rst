@@ -6,7 +6,11 @@
 Flask-Reqcheck
 ==============
 
-Validate requests to a flask server using Pydantic models.
+Flask-Reqcheck lets you validate requests in your Flask applications. It uses `Pydantic <https://docs.pydantic.dev/latest/>`_ 
+models to ensure incoming data meets well-defined schemas, enhancing reliability and security. With a simple decorator you 
+can quickly validate request bodies, query parameters, and url path parameters, reducing boilerplate code and minimizing 
+errors. Flask-Reqcheck helps you maintain clean and efficient code.
+
 
 Add your content using ``reStructuredText`` syntax. See the
 `reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
@@ -16,6 +20,9 @@ documentation for details.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   intro
+   api
 
 * :ref:`genindex`
 * :ref:`modindex`
