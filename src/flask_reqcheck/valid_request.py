@@ -12,17 +12,21 @@ class ValidRequest:
     against Pydantic models. It provides a way to store and convert these validated
     components into a dictionary for further processing.
 
-    When inside a Flask request context, use the
-    :func:`get_valid_request` helper function to retrieve an instance of
-    this class with the validated data.
+    When inside a Flask request context, use the :func:`get_valid_request` helper
+    function to retrieve an instance of this class with the validated data.
 
-    Attributes:
-        path_params (BaseModel | None): The validated path parameters of the request.
-        query_params (BaseModel | None): The validated query parameters of the request.
-        body (BaseModel | None): The validated body of the request.
-        form (BaseModel | None): The validated form data of the request.
-        headers (BaseModel | None): The validated headers of the request.
-        cookies (BaseModel | None): The validated cookies of the request.
+    :param path_params: The validated path parameters of the request.
+    :type path_params: BaseModel | None
+    :param query_params: The validated query parameters of the request.
+    :type query_params: BaseModel or None
+    :param body: The validated body of the request.
+    :type body: BaseModel or None
+    :param form: The validated form data of the request.
+    :type form: BaseModel or None
+    :param headers: The validated headers of the request.
+    :type headers: BaseModel or None
+    :param cookies: The validated cookies of the request.
+    :type cookies: BaseModel or None
     """
 
     def __init__(
