@@ -49,8 +49,27 @@ class PathParameterValidator:
         return as_model(path_params, self.model)
 
     def validate_from_declaration(
-        self, f: Callable, path_params: dict[str, Any]
+        self,
+        f: Callable,
+        path_params: dict[str, Any],
     ) -> BaseModel:
+        """Validate path parameters from the function declaration.
+
+        Uses the type hints in the function signature to validate the request url
+        parameters.
+
+        Parameters
+        ----------
+        f : Callable
+            The Flask route function that handles the request to be validated.
+        path_params : dict[str, Any]
+            The path parameters provided in the request.
+
+        Returns
+        -------
+        BaseModel
+            The Pydantic schema that defines the valid path parameters.
+        """
         function_arg_types = self.get_function_arg_types(f)
         validated_path_params = self.validate_path_params(
             path_params, function_arg_types
