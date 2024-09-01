@@ -214,7 +214,7 @@ def test_posted_json_body_validated_return(client):
     "form, expected_status_code",
     [
         ({"a": "Hello", "b": 21}, 200),
-        ({"a": "Hello", "b": 21, "unexpected": 3.141}, 400),
+        ({"a": "Hello", "b": 21, "unexpected": "Succeeds (set in model def)"}, 200),
         ({"a": "Something is missing..."}, 400),
     ],
 )
