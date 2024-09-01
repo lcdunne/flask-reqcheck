@@ -18,7 +18,7 @@ class PathParameterValidator:
     def __init__(
         self,
         model: Type[BaseModel] | None = None,
-        function_arg_types: dict[str, Any] = None,
+        function_arg_types: dict[str, Any] | None = None,
     ):
         self.model = model
         self.function_arg_types = function_arg_types or {}
