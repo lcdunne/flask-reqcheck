@@ -10,7 +10,7 @@ Flask-Reqcheck
 **Flask-Reqcheck** lets you validate requests in your Flask applications. With a simple 
 decorator and some `Pydantic <https://docs.pydantic.dev/latest/>`_ models, you can quickly 
 validate incoming request bodies, query parameters, and url path parameters, reducing 
-boilerplate code and minimizing errors. Flask-Reqcheck helps you maintain clean and efficient code.
+boilerplate code and minimizing errors.
 
 Installation
 ============

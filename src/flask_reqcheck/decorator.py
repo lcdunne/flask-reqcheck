@@ -1,5 +1,6 @@
 from functools import wraps
-from typing import Callable, Type
+from inspect import getfullargspec
+from typing import Any, Callable, Type
 
 from flask import g
 from pydantic import BaseModel
@@ -11,6 +12,23 @@ from flask_reqcheck.request_validation import (
     QueryParameterValidator,
 )
 from flask_reqcheck.valid_request import get_valid_request
+
+
+def get_function_arg_types(f: Callable) -> dict[str, Any]:
+    """
+    Retrieves all function arguments and their corresponding type hints.
+
+    This method excludes arguments for which no type hints are provided. If no
+    arguments have type hints, it returns an empty dictionary.
+
+    :param f: The function from which to extract argument type hints.
+    :type f: Callable
+    :return: A dictionary containing function argument names as keys and their type
+        hints as values.
+    :rtype: dict[str, Any]
+    """
+    spec = getfullargspec(f)
+    return spec.annotations
 
 
 def validate(
@@ -40,10 +58,12 @@ def validate(
     """
 
     def decorator(f: Callable):
+        fun_args = get_function_arg_types(f)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.path_params = PathParameterValidator(path).validate(f)
+            validated.path_params = PathParameterValidator(path, fun_args).validate()
             validated.query_params = QueryParameterValidator(query).validate()
             validated.body = BodyDataValidator(body).validate()
             validated.form = FormDataValidator(form).validate()
@@ -68,10 +88,12 @@ def validate_path(path: Type[BaseModel] | None = None) -> Callable:
     """
 
     def decorator(f: Callable):
+        fun_args = get_function_arg_types(f)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.path_params = PathParameterValidator(path).validate(f)
+            validated.path_params = PathParameterValidator(path, fun_args).validate()
             g.valid_request = validated
             return f(*args, **kwargs)
 
