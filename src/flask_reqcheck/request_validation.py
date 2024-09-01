@@ -1,6 +1,5 @@
 import json
-from inspect import getfullargspec
-from typing import Any, Callable, Type
+from typing import Any, Type
 
 from flask import abort, current_app, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
@@ -12,12 +11,19 @@ class PathParameterValidator:
 
     :param model: The Pydantic model to validate the path parameters against.
     :type model: Type[BaseModel] | None
+    :param function_arg_types: A mapping of function argument names to their types.
+    :type function_arg_types: dict[str, Any] | None
     """
 
-    def __init__(self, model: Type[BaseModel] | None = None):
+    def __init__(
+        self,
+        model: Type[BaseModel] | None = None,
+        function_arg_types: dict[str, Any] = None,
+    ):
         self.model = model
+        self.function_arg_types = function_arg_types or {}
 
-    def validate(self, f: Callable) -> BaseModel | None:
+    def validate(self) -> BaseModel | None:
         """
         Validate path parameters.
 
@@ -38,7 +44,7 @@ class PathParameterValidator:
         if path_params:
             if self.model is not None:
                 return self.validate_from_model(path_params)
-            return self.validate_from_declaration(f, path_params)
+            return self.validate_from_declaration(path_params)
         return
 
     def get_args_from_route_declaration(self) -> dict[str, Any] | None:
@@ -54,10 +60,10 @@ class PathParameterValidator:
         """
         Validate path parameters against a provided model.
 
-        This method attempts to validate the path parameters against the model provided in the
-        constructor. If the validation is successful, it returns a BaseModel instance
-        representing the validated parameters. If the validation fails or if no model is
-        provided, it returns None.
+        This method attempts to validate the path parameters against the model provided
+        in the constructor. If the validation is successful, it returns a BaseModel
+        instance representing the validated parameters. If the validation fails or if no
+        model is provided, it returns None.
 
         :param path_params: The path parameters to validate.
         :type path_params: dict[str, Any]
@@ -68,7 +74,6 @@ class PathParameterValidator:
 
     def validate_from_declaration(
         self,
-        f: Callable,
         path_params: dict[str, Any],
     ) -> BaseModel:
         """
@@ -77,38 +82,20 @@ class PathParameterValidator:
         Uses the type hints in the function signature to validate the request url
         parameters.
 
-        :param f: The Flask route function that handles the request to be validated.
-        :type f: Callable
         :param path_params: The path parameters provided in the request.
         :type path_params: dict[str, Any]
 
         :return: The Pydantic schema that defines the valid path parameters.
         :rtype: BaseModel
         """
-        function_arg_types = self.get_function_arg_types(f)
         validated_path_params = self.validate_path_params(
-            path_params, function_arg_types
+            path_params, self.function_arg_types
         )
         path_model = self.model or create_dynamic_model(
             "PathParams", **validated_path_params
         )
 
         return path_model.model_validate(validated_path_params)
-
-    def get_function_arg_types(self, f: Callable) -> dict[str, Any]:
-        """
-        Retrieves all function arguments and their corresponding type hints.
-
-        This method excludes arguments for which no type hints are provided. If no arguments have type hints,
-        it returns an empty dictionary.
-
-        :param f: The function from which to extract argument type hints.
-        :type f: Callable
-        :return: A dictionary containing function argument names as keys and their type hints as values.
-        :rtype: dict[str, Any]
-        """
-        spec = getfullargspec(f)
-        return spec.annotations
 
     def validate_path_params(
         self,
