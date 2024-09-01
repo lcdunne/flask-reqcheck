@@ -159,7 +159,10 @@ class PathParameterValidator:
         :return: The validated value.
         :rtype: Any
         """
-        return TypeAdapter(target_type).validate_python(value)
+        try:
+            return TypeAdapter(target_type).validate_python(value)
+        except ValidationError as e:
+            abort(400, validation_error_to_json(e))
 
 
 class QueryParameterValidator:
@@ -260,6 +263,7 @@ class BodyDataValidator:
 
         request_body = request.get_json()  # Raises 415 if not json
         if request_body and self.model is None:
+            # TODO: Needs to have the JSON response
             abort(400, "Unexpected data was provided")
 
         return as_model(request_body, self.model)
@@ -348,8 +352,12 @@ def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
             return model(**data)
         except ValidationError as e:
             # Requires ability to register a custom error handler?
-            abort(400, json.loads(e.json()))
+            abort(400, validation_error_to_json(e))
     return None
+
+
+def validation_error_to_json(e: ValidationError):
+    return json.loads(e.json())
 
 
 def request_has_body() -> bool:
