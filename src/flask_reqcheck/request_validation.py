@@ -51,7 +51,8 @@ class PathParameterValidator:
         """
         Get all path parameters.
 
-        :return: A dictionary containing path parameter names and their corresponding values provided in the request.
+        :return: A dictionary containing path parameter names and their corresponding
+            values provided in the request.
         :rtype: dict[str, Any] | None
         """
         return request.view_args
@@ -67,7 +68,8 @@ class PathParameterValidator:
 
         :param path_params: The path parameters to validate.
         :type path_params: dict[str, Any]
-        :return: The validated path parameters as a BaseModel instance, or None if validation fails.
+        :return: The validated path parameters as a BaseModel instance, or None if
+            validation fails.
         :rtype: BaseModel | None
         """
         return as_model(path_params, self.model)
@@ -304,8 +306,8 @@ class FormDataValidator:
         and returns the validated data. If validation fails or no model is provided,
         it returns None or aborts the request with a 400 error.
 
-        :return: The validated request form data as a Pydantic model instance, or None if
-            validation fails or no model is provided.
+        :return: The validated request form data as a Pydantic model instance, or None
+            if validation fails or no model is provided.
         :rtype: BaseModel | None
         """
         return as_model(request.form, self.model)
