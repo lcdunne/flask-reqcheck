@@ -70,6 +70,61 @@ def test_validated_from_route_function_untyped(client):
                 "b": "21",
                 "c": "3.141",
                 "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
+            },
+            200,
+        ),
+        (
+            {
+                "a": "hello",
+                "arr": ["b", "a", "d"],
+                "b": "21",
+                "c": "3.141",
+                "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
+            },
+            500,
+        ),
+        (
+            {
+                "a": "hello",
+                "arr": ["1", "2", "3"],
+                "b": "21",
+                "c": "3.141",
+                "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
+            },
+            200,
+        ),
+        (
+            {
+                "a": "hello",
+                "arr": ["1", "2", "3"],
+                "b": "21",
+                "c": "3.141",
+                "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
+                "unexpected": "parameter",
+            },
+            200,
+        ),
+        (
+            {},
+            200,
+        ),
+    ],
+)
+def test_query_parameters_validated(client, q, expected_status_code):
+    r = client.get("/query", query_string=q)
+    assert r.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "q, expected_status_code",
+    [
+        (
+            {
+                "a": "hello",
+                "arr": ["2", "3", "4"],
+                "b": "21",
+                "c": "3.141",
+                "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
                 "x": "important",
             },
             200,
@@ -92,7 +147,6 @@ def test_validated_from_route_function_untyped(client):
                 "b": "21",
                 "c": "3.141",
                 "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
-                # "x": "important",
             },
             500,
         ),
@@ -104,8 +158,8 @@ def test_validated_from_route_function_untyped(client):
         ),
     ],
 )
-def test_query_parameters_validated(client, q, expected_status_code):
-    r = client.get("/query", query_string=q)
+def test_query_parameters_required_validated(client, q, expected_status_code):
+    r = client.get("/query_required", query_string=q)
     assert r.status_code == expected_status_code
 
 
@@ -116,7 +170,6 @@ def test_query_parameters_return_validated(client):
         "b": "21",
         "c": "3.141",
         "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
-        "x": "important",
     }
 
     r = client.get("/query", query_string=q)
@@ -131,7 +184,6 @@ def test_query_parameters_return_validated(client):
         "b": 21,
         "c": 3.141,
         "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
-        "x": "important",
     }
 
 
