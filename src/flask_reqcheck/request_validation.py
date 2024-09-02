@@ -1,7 +1,6 @@
 import json
 from typing import Any, Type
 
-from flask import abort, current_app, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 
 
@@ -154,10 +153,7 @@ class PathParameterValidator:
         :return: The validated value.
         :rtype: Any
         """
-        try:
-            return TypeAdapter(target_type).validate_python(value)
-        except ValidationError as e:
-            abort(400, validation_error_to_json(e))
+        return TypeAdapter(target_type).validate_python(value)
 
 
 class QueryParameterValidator:
@@ -169,14 +165,21 @@ class QueryParameterValidator:
     it logs a warning and returns without validation.
     """
 
-    def __init__(self, model: Type[BaseModel] | None = None):
+    def __init__(
+        self,
+        model: Type[BaseModel] | None = None,
+        query_params: dict[str, Any] | None = None,
+    ):
         """
         Initializes the QueryParameterValidator with an optional Pydantic model.
 
         :param model: The Pydantic model to validate query parameters against.
         :type model: Type[BaseModel] | None
+        :param query_params: The query parameters extracted from the request object.
+        :type query_params: dict[str, Any] | None
         """
         self.model = model
+        self.query_params = query_params or {}
 
     def validate(self) -> BaseModel | None:
         """
@@ -190,34 +193,9 @@ class QueryParameterValidator:
             validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        query_params = self.extract_query_params_as_dict()
-        if not query_params:
+        if not self.query_params:
             return
-
-        if self.model is None:
-            current_app.logger.warning(
-                "Query parameters were submitted, but no `query_model` was "
-                "added for validation"
-            )
-            return
-
-        return as_model(query_params, self.model)
-
-    def extract_query_params_as_dict(self) -> dict:
-        """
-        Extracts query parameters from the Flask request as a dictionary.
-
-        This method iterates over the query parameters in the Flask request, and
-        converts them into a dictionary. If a parameter has multiple values, it is
-        stored as a list in the dictionary.
-
-        :return: A dictionary containing the query parameters.
-        :rtype: dict
-        """
-        return {
-            key: values[0] if len(values) == 1 else values
-            for key, values in request.args.lists()
-        }
+        return as_model(self.query_params, self.model)
 
 
 class BodyDataValidator:
@@ -231,7 +209,9 @@ class BodyDataValidator:
     If any condition fails, it returns None or aborts the request with a 400 error.
     """
 
-    def __init__(self, model: Type[BaseModel] | None = None):
+    def __init__(
+        self, model: Type[BaseModel] | None = None, body: dict[str, Any] | None = None
+    ):
         """
         Initializes the BodyDataValidator with an optional Pydantic model.
 
@@ -239,6 +219,7 @@ class BodyDataValidator:
         :type model: Type[BaseModel] | None
         """
         self.model = model
+        self.body = body or {}
 
     def validate(self) -> BaseModel | None:
         """
@@ -253,15 +234,14 @@ class BodyDataValidator:
             validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        if not request_has_body() or request.form:
+        if not self.body:
             return
 
-        request_body = request.get_json()  # Raises 415 if not json
-        if request_body and self.model is None:
+        if self.body and self.model is None:
             # TODO: Needs to have the JSON response
-            abort(400, "Unexpected data was provided")
+            raise ValidationError()
 
-        return as_model(request_body, self.model)
+        return as_model(self.body, self.model)
 
 
 class FormDataValidator:
@@ -282,7 +262,9 @@ class FormDataValidator:
     :rtype: BaseModel | None
     """
 
-    def __init__(self, model: Type[BaseModel] | None = None):
+    def __init__(
+        self, model: Type[BaseModel] | None = None, form: dict[str, Any] | None = None
+    ):
         """
         Initializes the FormDataValidator with an optional Pydantic model.
 
@@ -290,6 +272,7 @@ class FormDataValidator:
         :type model: Type[BaseModel] | None
         """
         self.model = model
+        self.form = form or {}
 
     def validate(self) -> BaseModel | None:
         """
@@ -303,7 +286,7 @@ class FormDataValidator:
             if validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        return as_model(request.form, self.model)
+        return as_model(self.form, self.model)
 
 
 def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
@@ -342,27 +325,9 @@ def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
     :rtype: BaseModel | None
     """
     if model is not None:
-        try:
-            # TODO: Find some way to fail here if an unrecognised parameter is provided.
-            return model(**data)
-        except ValidationError as e:
-            # Requires ability to register a custom error handler?
-            abort(400, validation_error_to_json(e))
+        return model(**data)
     return None
 
 
 def validation_error_to_json(e: ValidationError):
     return json.loads(e.json())
-
-
-def request_has_body() -> bool:
-    """
-    Checks if the request has a body.
-
-    According to RFC7230 - 3.3. Message Body, the presence of a body in a request is
-    signaled by the presence of a Content-Length or Transfer-Encoding header field.
-
-    :return: True if the request has a body, False otherwise.
-    :rtype: bool
-    """
-    return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers

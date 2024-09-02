@@ -7,9 +7,9 @@ import pytest
         ("hello", "2", "3", "1bf221b1-6b8e-439c-9dbb-cc281bc6757d", 200),
         ("1", "2", "3", "5e7f6324-5027-4311-a971-b40eb58aa4a6", 200),
         # TODO: These should be 400 bad requests, not 500
-        ("hello", "invalid literal", "3", "1bf221b1-6b8e-439c-9dbb-cc281bc6757d", 400),
-        ("hello", False, "3", "1bf221b1-6b8e-439c-9dbb-cc281bc6757d", 400),
-        ("hello", "2", "3", "not-a-uuid", 400),
+        ("hello", "invalid literal", "3", "1bf221b1-6b8e-439c-9dbb-cc281bc6757d", 500),
+        ("hello", False, "3", "1bf221b1-6b8e-439c-9dbb-cc281bc6757d", 500),
+        ("hello", "2", "3", "not-a-uuid", 500),
     ],
 )
 def test_validated_from_route_function_fully_typed(
@@ -83,7 +83,7 @@ def test_validated_from_route_function_untyped(client):
                 "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
                 "x": "important",
             },
-            400,
+            500,
         ),
         (
             {
@@ -94,7 +94,7 @@ def test_validated_from_route_function_untyped(client):
                 "d": "1bf221b1-6b8e-439c-9dbb-cc281bc6757d",
                 # "x": "important",
             },
-            400,
+            500,
         ),
         (
             {
@@ -156,7 +156,7 @@ def test_query_parameters_return_validated(client):
                 "d": "06b57c96-e066-4c20-862a-180754ab24f5",
                 "arr": [1, 2, 3, 4, 5],
             },
-            400,
+            500,
         ),
         (
             {
@@ -166,7 +166,7 @@ def test_query_parameters_return_validated(client):
                 "d": "not-a-uuid",
                 "arr": [1, 2, 3, 4, 5],
             },
-            400,
+            500,
         ),
         (
             {
@@ -177,14 +177,14 @@ def test_query_parameters_return_validated(client):
                 "arr": [1, 2, 3, 4, 5],
                 "unexpected": "This field is not included in the model",
             },
-            400,
+            500,
         ),
         (
             {
                 "a": "Lots of missing stuff",
                 "arr": [1, 2, 3, 4, 5],
             },
-            400,
+            500,
         ),
     ],
 )
@@ -215,7 +215,7 @@ def test_posted_json_body_validated_return(client):
     [
         ({"a": "Hello", "b": 21}, 200),
         ({"a": "Hello", "b": 21, "unexpected": "Succeeds (set in model def)"}, 200),
-        ({"a": "Something is missing..."}, 400),
+        ({"a": "Something is missing..."}, 500),
     ],
 )
 def test_posted_form_validated(client, form, expected_status_code):

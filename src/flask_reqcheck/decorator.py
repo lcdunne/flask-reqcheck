@@ -31,6 +31,36 @@ def get_function_arg_types(f: Callable) -> dict[str, Any]:
     return spec.annotations
 
 
+def extract_query_params_as_dict() -> dict[str, Any]:
+    """
+    Extracts query parameters from the Flask request as a dictionary.
+
+    This method iterates over the query parameters in the Flask request, and
+    converts them into a dictionary. If a parameter has multiple values, it is
+    stored as a list in the dictionary.
+
+    :return: A dictionary containing the query parameters.
+    :rtype: dict
+    """
+    return {
+        key: values[0] if len(values) == 1 else values
+        for key, values in request.args.lists()
+    }
+
+
+def request_has_body() -> bool:
+    """
+    Checks if the request has a body.
+
+    According to RFC7230 - 3.3. Message Body, the presence of a body in a request is
+    signaled by the presence of a Content-Length or Transfer-Encoding header field.
+
+    :return: True if the request has a body, False otherwise.
+    :rtype: bool
+    """
+    return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers
+
+
 def validate(
     body: Type[BaseModel] | None = None,
     query: Type[BaseModel] | None = None,
@@ -63,13 +93,22 @@ def validate(
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
+
             validated.path_params = PathParameterValidator(
                 path, request.view_args, fun_args
             ).validate()
 
-            validated.query_params = QueryParameterValidator(query).validate()
-            validated.body = BodyDataValidator(body).validate()
-            validated.form = FormDataValidator(form).validate()
+            validated.query_params = QueryParameterValidator(
+                query, extract_query_params_as_dict()
+            ).validate()
+
+            # Body/form is determined by the Content-Type header.
+            if body:
+                validated.body = BodyDataValidator(body, request.get_json()).validate()
+            elif form:
+                # TODO: Check here if header Content-Type is
+                #  `application/x-www-form-urlencoded`?
+                validated.form = FormDataValidator(form, request.form).validate()
 
             g.valid_request = validated
 
@@ -109,7 +148,7 @@ def validate_path(path: Type[BaseModel] | None = None) -> Callable:
     return decorator
 
 
-def validate_query(query: Type[BaseModel] | None = None) -> Callable:
+def validate_query(query: Type[BaseModel]) -> Callable:
     """
     A decorator to validate Flask request query parameters against a Pydantic model.
 
@@ -123,8 +162,13 @@ def validate_query(query: Type[BaseModel] | None = None) -> Callable:
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.query_params = QueryParameterValidator(query).validate()
+
+            validated.query_params = QueryParameterValidator(
+                query, extract_query_params_as_dict()
+            ).validate()
+
             g.valid_request = validated
+
             return f(*args, **kwargs)
 
         return wrapper
@@ -132,7 +176,7 @@ def validate_query(query: Type[BaseModel] | None = None) -> Callable:
     return decorator
 
 
-def validate_body(body: Type[BaseModel] | None = None) -> Callable:
+def validate_body(body: Type[BaseModel]) -> Callable:
     """
     A decorator to validate Flask request body against a Pydantic model.
 
@@ -155,7 +199,7 @@ def validate_body(body: Type[BaseModel] | None = None) -> Callable:
     return decorator
 
 
-def validate_form(form: Type[BaseModel] | None = None) -> Callable:
+def validate_form(form: Type[BaseModel]) -> Callable:
     """
     A decorator to validate Flask request form data against a Pydantic model.
 
