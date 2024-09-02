@@ -10,9 +10,15 @@ class PathParameterValidator:
 
     :param model: The Pydantic model to validate the path parameters against.
     :type model: Type[BaseModel] | None
-    :param view_args: A mapping of URL path parameter names and their values.
+    :param view_args: A mapping of URL path parameter names and their values. These URL
+        path parameters are those from the URL for a given view function. If using
+        Flask's built-in type converters, the values of this dictionary will already be
+        valid; however, the type-hints given in the view function's signature take
+        precedence.
     :type view_args: dict[str, str] | None
     :param function_arg_types: A mapping of function argument names to their types.
+        Unlike the `view_args`, these are directly taken from the function signature and
+        take precedence over view_args if given.
     :type function_arg_types: dict[str, Any] | None
     """
 
@@ -36,66 +42,36 @@ class PathParameterValidator:
         declaration. If no type hints are given, flask's default validation will be
         used as a fallback.
 
-        :param f: The function to validate against if no model is provided.
-        :type f: Callable
-
         :return: The validated path parameters as a BaseModel instance, or None if no
             parameters are found.
         :rtype: BaseModel | None
         """
         if self.view_args:
+            # The Flask route contains url parameters
             if self.model is not None:
-                return self.validate_from_model(self.view_args)
-            return self.validate_from_declaration(self.view_args)
+                return as_model(self.view_args, self.model)
+            return self.validate_from_declaration()
         return
 
-    def validate_from_model(self, path_params: dict[str, Any]) -> BaseModel | None:
-        """
-        Validate path parameters against a provided model.
-
-        This method attempts to validate the path parameters against the model provided
-        in the constructor. If the validation is successful, it returns a BaseModel
-        instance representing the validated parameters. If the validation fails or if no
-        model is provided, it returns None.
-
-        :param path_params: The path parameters to validate.
-        :type path_params: dict[str, Any]
-        :return: The validated path parameters as a BaseModel instance, or None if
-            validation fails.
-        :rtype: BaseModel | None
-        """
-        return as_model(path_params, self.model)
-
-    def validate_from_declaration(
-        self,
-        path_params: dict[str, Any],
-    ) -> BaseModel:
+    def validate_from_declaration(self) -> BaseModel:
         """
         Validate path parameters from the function declaration.
 
         Uses the type hints in the function signature to validate the request url
         parameters.
 
-        :param path_params: The path parameters provided in the request.
-        :type path_params: dict[str, Any]
-
         :return: The Pydantic schema that defines the valid path parameters.
         :rtype: BaseModel
         """
-        validated_path_params = self.validate_path_params(
-            path_params, self.function_arg_types
-        )
+        validated_path_params = self.validate_path_params()
+
         path_model = self.model or create_dynamic_model(
             "PathParams", **validated_path_params
         )
 
         return path_model.model_validate(validated_path_params)
 
-    def validate_path_params(
-        self,
-        path_params: dict[str, Any],
-        function_arg_types: dict[str, Type],
-    ) -> dict[str, Any]:
+    def validate_path_params(self) -> dict[str, Any]:
         """
         Validates path parameters against the expected types from the function
         declaration.
@@ -105,55 +81,15 @@ class PathParameterValidator:
         value against that type. The validated parameters are then returned as a
         dictionary.
 
-        :param path_params: The path parameters to validate.
-        :type path_params: dict[str, Any]
-        :param function_arg_types: The expected types for each parameter based on the
-            function's type hints.
-        :type function_arg_types: dict[str, Type]
         :return: A dictionary containing the validated path parameters.
         :rtype: dict[str, Any]
         """
         validated_path_params = {}
-        for arg, value in path_params.items():
-            target_type = self.get_target_type(arg, value, function_arg_types)
-            validated_value = self.validate_value(value, target_type)
+        for arg, value in self.view_args.items():
+            target_type = self.function_arg_types.get(arg, type(value))
+            validated_value = TypeAdapter(target_type).validate_python(value)
             validated_path_params[arg] = validated_value
         return validated_path_params
-
-    def get_target_type(
-        self, arg: str, value: Any, function_arg_types: dict[str, Type]
-    ) -> Type:
-        """
-        Retrieves the expected type for a given argument based on the function's
-        type hints. If no type hint is specified for the argument, it defaults to the
-        type of the provided value.
-
-        :param arg: The name of the argument for which to retrieve the expected type.
-        :type arg: str
-        :param value: The value of the argument, used to determine its type if no type
-            hint is available.
-        :type value: Any
-        :param function_arg_types: A dictionary containing the expected types for each
-            argument based on the function's type hints.
-        :type function_arg_types: dict[str, Type]
-        :return: The expected type for the given argument, or the type of the value if
-            no type hint is specified.
-        :rtype: Type
-        """
-        return function_arg_types.get(arg, type(value))
-
-    def validate_value(self, value: Any, target_type: Type) -> Any:
-        """
-        Validate the value against the target type using Pydantic's TypeAdapter.
-
-        :param value: The value to be validated.
-        :type value: Any
-        :param target_type: The type to validate the value against.
-        :type target_type: Type
-        :return: The validated value.
-        :rtype: Any
-        """
-        return TypeAdapter(target_type).validate_python(value)
 
 
 class QueryParameterValidator:
