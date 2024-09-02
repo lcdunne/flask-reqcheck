@@ -2,7 +2,7 @@ from functools import wraps
 from inspect import getfullargspec
 from typing import Any, Callable, Type
 
-from flask import g
+from flask import g, request
 from pydantic import BaseModel
 
 from flask_reqcheck.request_validation import (
@@ -63,7 +63,10 @@ def validate(
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.path_params = PathParameterValidator(path, fun_args).validate()
+            validated.path_params = PathParameterValidator(
+                path, request.view_args, fun_args
+            ).validate()
+
             validated.query_params = QueryParameterValidator(query).validate()
             validated.body = BodyDataValidator(body).validate()
             validated.form = FormDataValidator(form).validate()
@@ -93,7 +96,11 @@ def validate_path(path: Type[BaseModel] | None = None) -> Callable:
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.path_params = PathParameterValidator(path, fun_args).validate()
+
+            validated.path_params = PathParameterValidator(
+                path, request.view_args, fun_args
+            ).validate()
+
             g.valid_request = validated
             return f(*args, **kwargs)
 

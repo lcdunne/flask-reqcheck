@@ -11,6 +11,8 @@ class PathParameterValidator:
 
     :param model: The Pydantic model to validate the path parameters against.
     :type model: Type[BaseModel] | None
+    :param view_args: A mapping of URL path parameter names and their values.
+    :type view_args: dict[str, str] | None
     :param function_arg_types: A mapping of function argument names to their types.
     :type function_arg_types: dict[str, Any] | None
     """
@@ -18,9 +20,11 @@ class PathParameterValidator:
     def __init__(
         self,
         model: Type[BaseModel] | None = None,
+        view_args: dict[str, str] | None = None,
         function_arg_types: dict[str, Any] | None = None,
     ):
         self.model = model
+        self.view_args = view_args or {}
         self.function_arg_types = function_arg_types or {}
 
     def validate(self) -> BaseModel | None:
@@ -40,22 +44,11 @@ class PathParameterValidator:
             parameters are found.
         :rtype: BaseModel | None
         """
-        path_params = self.get_args_from_route_declaration()  # arg: value
-        if path_params:
+        if self.view_args:
             if self.model is not None:
-                return self.validate_from_model(path_params)
-            return self.validate_from_declaration(path_params)
+                return self.validate_from_model(self.view_args)
+            return self.validate_from_declaration(self.view_args)
         return
-
-    def get_args_from_route_declaration(self) -> dict[str, Any] | None:
-        """
-        Get all path parameters.
-
-        :return: A dictionary containing path parameter names and their corresponding
-            values provided in the request.
-        :rtype: dict[str, Any] | None
-        """
-        return request.view_args
 
     def validate_from_model(self, path_params: dict[str, Any]) -> BaseModel | None:
         """
