@@ -125,12 +125,9 @@ class QueryParameterValidator:
         against the model provided during initialization. If no model is provided, logs
         a warning and returns without validation.
 
-        :return: The validated query parameters as a Pydantic model instance, or None if
-            validation fails or no model is provided.
+        :return: The validated query parameters as a Pydantic model instance.
         :rtype: BaseModel | None
         """
-        if not self.query_params:
-            return
         return as_model(self.query_params, self.model)
 
 

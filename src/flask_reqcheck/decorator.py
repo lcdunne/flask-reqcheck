@@ -119,8 +119,9 @@ def validate_query(query: Type[BaseModel]) -> Callable:
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
 
+            query_params = extract_query_params_as_dict()
             validated.query_params = QueryParameterValidator(
-                query, extract_query_params_as_dict()
+                query, query_params
             ).validate()
 
             g.valid_request = validated
