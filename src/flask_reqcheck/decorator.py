@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Callable, Type
 
-from flask import g, request
+from flask import abort, g, request
 from pydantic import BaseModel
 
 from flask_reqcheck.request_validation import (
@@ -14,6 +14,7 @@ from flask_reqcheck.valid_request import get_valid_request
 from flask_reqcheck.validation_utils import (
     extract_query_params_as_dict,
     get_function_arg_types,
+    request_is_form,
 )
 
 
@@ -62,8 +63,9 @@ def validate(
             if body:
                 validated.body = BodyDataValidator(body, request.get_json()).validate()
             elif form:
-                # TODO: Check here if header Content-Type is
-                #  `application/x-www-form-urlencoded`?
+                # TODO: Needs work - `request.form` can be nullable unlike get_json()
+                if not request_is_form():
+                    abort(415)
                 validated.form = FormDataValidator(form, request.form).validate()
 
             g.valid_request = validated
@@ -147,7 +149,8 @@ def validate_body(body: Type[BaseModel]) -> Callable:
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
-            validated.body = BodyDataValidator(body).validate()
+            request_body = request.get_json()
+            validated.body = BodyDataValidator(body, request_body).validate()
             g.valid_request = validated
             return f(*args, **kwargs)
 
@@ -170,6 +173,9 @@ def validate_form(form: Type[BaseModel]) -> Callable:
         @wraps(f)
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
+
+            if not request_is_form():
+                abort(415)
             validated.form = FormDataValidator(form).validate()
             g.valid_request = validated
             return f(*args, **kwargs)

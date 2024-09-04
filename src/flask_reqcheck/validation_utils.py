@@ -49,3 +49,16 @@ def request_has_body() -> bool:
     :rtype: bool
     """
     return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers
+
+
+def request_is_form() -> bool:
+    """
+    Checks if the request contains form data.
+
+    :return: True if the request contains for mdata, False otherwise.
+    :rtype: bool
+    """
+    return request.headers.get("Content-Type") in [
+        "application/x-www-form-urlencoded",
+        "multipart/form-data",
+    ]

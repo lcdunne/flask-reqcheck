@@ -238,6 +238,7 @@ def test_query_parameters_return_validated(client):
             },
             500,
         ),
+        ({}, 500),
     ],
 )
 def test_posted_json_body_validated(client, body, expected_status_code):

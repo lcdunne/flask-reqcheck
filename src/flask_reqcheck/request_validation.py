@@ -167,12 +167,9 @@ class BodyDataValidator:
             validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        if not self.body:
-            return
-
         if self.body and self.model is None:
-            # TODO: Needs to have the JSON response
-            raise ValidationError()
+            # This is possible if using just the `@validate` decorator.
+            raise Exception("Request body received but no validation model")
 
         return as_model(self.body, self.model)
 
@@ -219,6 +216,11 @@ class FormDataValidator:
             if validation fails or no model is provided.
         :rtype: BaseModel | None
         """
+        if self.form and self.model is None:
+            # This is possible if using just the `@validate` decorator.
+            raise Exception("Request form received but no validation model")
+        elif self.model and not self.form:
+            raise Exception("Expected form data but no form was found")
         return as_model(self.form, self.model)
 
 
