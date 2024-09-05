@@ -40,7 +40,7 @@ def extract_query_params_as_dict() -> dict[str, Any]:
 
 def request_has_body() -> bool:
     """
-    Checks if the request has a body.
+    Checks the Content-Type header to ensure that the request has a body.
 
     According to RFC7230 - 3.3. Message Body, the presence of a body in a request is
     signaled by the presence of a Content-Length or Transfer-Encoding header field.
@@ -53,7 +53,7 @@ def request_has_body() -> bool:
 
 def request_is_form() -> bool:
     """
-    Checks if the request contains form data.
+    Checks the Content-Type header to ensure that it is form data..
 
     :return: True if the request contains for mdata, False otherwise.
     :rtype: bool

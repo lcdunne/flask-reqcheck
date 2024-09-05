@@ -50,22 +50,22 @@ def valid_path(a: str, b: int, c: float, d: uuid.UUID):
 
 
 @endpoints.get("/query")
-@validate_query(query=QueryModel)
+@validate_query(query_model=QueryModel)
 def request_with_query_parameters():
     vreq = get_valid_request()
     return vreq.to_dict()
 
 
 @endpoints.get("/query_required")
-@validate_query(query=QueryModelWithRequred)
+@validate_query(query_model=QueryModelWithRequred)
 def request_with_required_query_parameter():
     vreq = get_valid_request()
     return vreq.to_dict()
 
 
 @endpoints.get("/query/with/path/<a>/<b>/<c>/<d>")
-@validate_path(path=PathModel)
-@validate_query(query=QueryModel)
+@validate_path(path_model=PathModel)
+@validate_query(query_model=QueryModel)
 def request_with_query_and_path_parameters(a, b, c, d):
     vreq = get_valid_request()
     return vreq.to_dict()
@@ -79,7 +79,7 @@ def request_with_body():
 
 
 @endpoints.post("/form")
-@validate(form=FormModel)
+@validate(form_model=FormModel)
 def request_with_form_data():
     vreq = get_valid_request()
     return vreq.to_dict()

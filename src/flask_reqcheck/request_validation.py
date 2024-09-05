@@ -24,8 +24,8 @@ class PathParameterValidator:
 
     def __init__(
         self,
+        view_args: dict[str, str],
         model: Type[BaseModel] | None = None,
-        view_args: dict[str, str] | None = None,
         function_arg_types: dict[str, Any] | None = None,
     ):
         self.model = model
@@ -46,12 +46,9 @@ class PathParameterValidator:
             parameters are found.
         :rtype: BaseModel | None
         """
-        if self.view_args:
-            # The Flask route contains url parameters
-            if self.model is not None:
-                return as_model(self.view_args, self.model)
-            return self.validate_from_declaration()
-        return
+        if self.model is not None:
+            return as_model(self.view_args, self.model)
+        return self.validate_from_declaration()
 
     def validate_from_declaration(self) -> BaseModel:
         """
@@ -103,8 +100,8 @@ class QueryParameterValidator:
 
     def __init__(
         self,
-        model: Type[BaseModel] | None = None,
-        query_params: dict[str, Any] | None = None,
+        model: Type[BaseModel],
+        query_params: dict[str, Any],
     ):
         """
         Initializes the QueryParameterValidator with an optional Pydantic model.
@@ -115,7 +112,7 @@ class QueryParameterValidator:
         :type query_params: dict[str, Any] | None
         """
         self.model = model
-        self.query_params = query_params or {}
+        self.query_params = query_params
 
     def validate(self) -> BaseModel | None:
         """
@@ -142,9 +139,7 @@ class BodyDataValidator:
     If any condition fails, it returns None or aborts the request with a 400 error.
     """
 
-    def __init__(
-        self, model: Type[BaseModel] | None = None, body: dict[str, Any] | None = None
-    ):
+    def __init__(self, model: Type[BaseModel], body: dict[str, Any]):
         """
         Initializes the BodyDataValidator with an optional Pydantic model.
 
@@ -152,7 +147,7 @@ class BodyDataValidator:
         :type model: Type[BaseModel] | None
         """
         self.model = model
-        self.body = body or {}
+        self.body = body
 
     def validate(self) -> BaseModel | None:
         """
@@ -167,10 +162,6 @@ class BodyDataValidator:
             validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        if self.body and self.model is None:
-            # This is possible if using just the `@validate` decorator.
-            raise Exception("Request body received but no validation model")
-
         return as_model(self.body, self.model)
 
 
@@ -192,9 +183,7 @@ class FormDataValidator:
     :rtype: BaseModel | None
     """
 
-    def __init__(
-        self, model: Type[BaseModel] | None = None, form: dict[str, Any] | None = None
-    ):
+    def __init__(self, model: Type[BaseModel], form: dict[str, Any]):
         """
         Initializes the FormDataValidator with an optional Pydantic model.
 
@@ -202,7 +191,7 @@ class FormDataValidator:
         :type model: Type[BaseModel] | None
         """
         self.model = model
-        self.form = form or {}
+        self.form = form
 
     def validate(self) -> BaseModel | None:
         """
@@ -216,11 +205,6 @@ class FormDataValidator:
             if validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        if self.form and self.model is None:
-            # This is possible if using just the `@validate` decorator.
-            raise Exception("Request form received but no validation model")
-        elif self.model and not self.form:
-            raise Exception("Expected form data but no form was found")
         return as_model(self.form, self.model)
 
 
