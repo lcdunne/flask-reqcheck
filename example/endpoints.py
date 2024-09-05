@@ -2,7 +2,13 @@ import uuid
 
 from flask import Blueprint
 
-from flask_reqcheck import get_valid_request, validate, validate_path, validate_query
+from flask_reqcheck import (
+    get_valid_request,
+    validate,
+    validate_body,
+    validate_path,
+    validate_query,
+)
 
 from .schemas import BodyModel, FormModel, PathModel, QueryModel, QueryModelWithRequred
 
@@ -29,8 +35,15 @@ def valid_partially_typed_path(a, b: int, c: float, d):
     return vreq.to_dict()
 
 
+@endpoints.get("/path/converters/<string:a>/<int:b>/<int:c>/<uuid:d>")
+@validate()  # doesn't get function args
+def valid_flask_converters_path(a, b, c, d):
+    vreq = get_valid_request()
+    return vreq.to_dict()
+
+
 @endpoints.get("/path/typed/<a>/<b>/<c>/<d>")
-@validate()
+@validate_path()  # gets function args
 def valid_path(a: str, b: int, c: float, d: uuid.UUID):
     vreq = get_valid_request()
     return vreq.to_dict()
@@ -59,7 +72,7 @@ def request_with_query_and_path_parameters(a, b, c, d):
 
 
 @endpoints.post("/body")
-@validate(body=BodyModel)
+@validate_body(BodyModel)
 def request_with_body():
     vreq = get_valid_request()
     return vreq.to_dict()
