@@ -65,11 +65,9 @@ def validate(
                 ).validate()
 
             if body_model is not None:
-                # TODO: Needs to throw an error
                 request_body = request.get_json()
                 validated.body = BodyDataValidator(body_model, request_body).validate()
             elif form_model is not None:
-                # TODO: Needs work - `request.form` can be nullable unlike get_json()
                 if not request_is_form():
                     abort(415)  # TODO: test
                 validated.form = FormDataValidator(form_model, request.form).validate()
@@ -102,8 +100,9 @@ def validate_path(path_model: Type[BaseModel] | None = None) -> Callable:
             validated = get_valid_request()
 
             if not request.view_args:
-                # TODO: Custom exception
-                raise ValueError("Expected path parameters but none were found.")
+                raise RuntimeError(
+                    "No path parameters found on decorated view function."
+                )
 
             validated.path_params = PathParameterValidator(
                 request.view_args, path_model, fun_args
@@ -161,7 +160,6 @@ def validate_body(body_model: Type[BaseModel]) -> Callable:
     def decorator(f: Callable):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            # TODO: Support data other than JSON?
             validated = get_valid_request()
             request_body = request.get_json()
             validated.body = BodyDataValidator(body_model, request_body).validate()
@@ -189,8 +187,7 @@ def validate_form(form_model: Type[BaseModel]) -> Callable:
             validated = get_valid_request()
 
             if not request_is_form():
-                # TODO: Custom exception
-                abort(415)
+                abort(415)  # TODO: Provide some message
 
             validated.form = FormDataValidator(form_model, request.form).validate()
             g.valid_request = validated
