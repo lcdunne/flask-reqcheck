@@ -244,7 +244,7 @@ def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
     :rtype: BaseModel | None
     """
     if model is not None:
-        return model(**data)
+        return model.model_validate(data)
     return None
 
 

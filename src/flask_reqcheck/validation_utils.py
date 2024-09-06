@@ -1,5 +1,5 @@
 from inspect import getfullargspec
-from typing import Any, Callable
+from typing import Any, Callable, ItemsView, Iterator
 
 from flask import request
 
@@ -32,10 +32,17 @@ def extract_query_params_as_dict() -> dict[str, Any]:
     :return: A dictionary containing the query parameters.
     :rtype: dict
     """
-    return {
-        key: values[0] if len(values) == 1 else values
-        for key, values in request.args.lists()
-    }
+    return _extract_multi_to_dict(request.args.lists())
+
+
+def extract_form_data_as_dict() -> dict[str, Any]:
+    return _extract_multi_to_dict(request.form.to_dict(flat=False).items())
+
+
+def _extract_multi_to_dict(
+    data: dict[str, Any] | Iterator[tuple[str, list[str]]] | ItemsView[str, list[str]]
+):
+    return {key: values[0] if len(values) == 1 else values for key, values in data}
 
 
 def request_has_body() -> bool:

@@ -12,6 +12,7 @@ from flask_reqcheck.request_validation import (
 )
 from flask_reqcheck.valid_request import get_valid_request
 from flask_reqcheck.validation_utils import (
+    extract_form_data_as_dict,
     extract_query_params_as_dict,
     get_function_arg_types,
     request_is_form,
@@ -70,7 +71,8 @@ def validate(
             elif form_model is not None:
                 if not request_is_form():
                     abort(415)  # TODO: test
-                validated.form = FormDataValidator(form_model, request.form).validate()
+                form_data = extract_form_data_as_dict()
+                validated.form = FormDataValidator(form_model, form_data).validate()
 
             g.valid_request = validated
 
@@ -189,7 +191,8 @@ def validate_form(form_model: Type[BaseModel]) -> Callable:
             if not request_is_form():
                 abort(415)  # TODO: Provide some message
 
-            validated.form = FormDataValidator(form_model, request.form).validate()
+            form_data = extract_form_data_as_dict()
+            validated.form = FormDataValidator(form_model, form_data).validate()
             g.valid_request = validated
             return f(*args, **kwargs)
 
