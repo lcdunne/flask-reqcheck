@@ -18,7 +18,9 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     # "pallets_sphinx_themes",
+    "numpydoc",
 ]
+numpydoc_show_class_members = False
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
