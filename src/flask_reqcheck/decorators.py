@@ -5,10 +5,10 @@ from flask import abort, g, request
 from pydantic import BaseModel
 
 from flask_reqcheck.request_validation import (
-    BodyDataValidator,
-    FormDataValidator,
-    PathParameterValidator,
-    QueryParameterValidator,
+    validate_body_data,
+    validate_form_data,
+    validate_path_parameters,
+    validate_query_parameters,
 )
 from flask_reqcheck.valid_request import get_valid_request
 from flask_reqcheck.validation_utils import (
@@ -55,24 +55,24 @@ def validate(
             validated = get_valid_request()
 
             if request.view_args:
-                validated.path_params = PathParameterValidator(
+                validated.path_params = validate_path_parameters(
                     request.view_args, path_model, fun_args
-                ).validate()
+                )
 
             if query_model is not None:
                 params_as_dict = extract_query_params_as_dict()
-                validated.query_params = QueryParameterValidator(
+                validated.query_params = validate_query_parameters(
                     query_model, params_as_dict
-                ).validate()
+                )
 
             if body_model is not None:
                 request_body = request.get_json()
-                validated.body = BodyDataValidator(body_model, request_body).validate()
+                validated.body = validate_body_data(body_model, request_body)
             elif form_model is not None:
                 if not request_is_form():
                     abort(415)  # TODO: test
                 form_data = extract_form_data_as_dict()
-                validated.form = FormDataValidator(form_model, form_data).validate()
+                validated.form = validate_form_data(form_model, form_data)
 
             g.valid_request = validated
 
@@ -106,9 +106,9 @@ def validate_path(path_model: Type[BaseModel] | None = None) -> Callable:
                     "No path parameters found on decorated view function."
                 )
 
-            validated.path_params = PathParameterValidator(
+            validated.path_params = validate_path_parameters(
                 request.view_args, path_model, fun_args
-            ).validate()
+            )
 
             g.valid_request = validated
 
@@ -136,9 +136,9 @@ def validate_query(query_model: Type[BaseModel]) -> Callable:
             validated = get_valid_request()
 
             query_params = extract_query_params_as_dict()
-            validated.query_params = QueryParameterValidator(
+            validated.query_params = validate_query_parameters(
                 query_model, query_params
-            ).validate()
+            )
 
             g.valid_request = validated
 
@@ -164,7 +164,7 @@ def validate_body(body_model: Type[BaseModel]) -> Callable:
         def wrapper(*args, **kwargs):
             validated = get_valid_request()
             request_body = request.get_json()
-            validated.body = BodyDataValidator(body_model, request_body).validate()
+            validated.body = validate_body_data(body_model, request_body)
             g.valid_request = validated
             return f(*args, **kwargs)
 
@@ -192,7 +192,7 @@ def validate_form(form_model: Type[BaseModel]) -> Callable:
                 abort(415)  # TODO: Provide some message
 
             form_data = extract_form_data_as_dict()
-            validated.form = FormDataValidator(form_model, form_data).validate()
+            validated.form = validate_form_data(form_model, form_data)
             g.valid_request = validated
             return f(*args, **kwargs)
 
