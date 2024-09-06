@@ -226,7 +226,7 @@ def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
     return create_model(name, **fields)  # type: ignore
 
 
-def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
+def as_model(data: dict, model: Type[BaseModel]) -> BaseModel:
     """
     Attempts to validate the provided data against a Pydantic model.
 
@@ -238,14 +238,11 @@ def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
     :param data: The data to be validated.
     :type data: dict
     :param model: The Pydantic model to validate the data against.
-    :type model: Type[BaseModel] | None
-    :return: The validated data as a Pydantic model instance, or None if validation
-        fails or no model is provided.
+    :type model: Type[BaseModel]
+    :return: The validated data as a Pydantic model instance
     :rtype: BaseModel | None
     """
-    if model is not None:
-        return model.model_validate(data)
-    return None
+    return model.model_validate(data)
 
 
 def validation_error_to_json(e: ValidationError):
