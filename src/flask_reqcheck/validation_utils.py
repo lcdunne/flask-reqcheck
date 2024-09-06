@@ -1,5 +1,6 @@
+from collections.abc import ItemsView
 from inspect import getfullargspec
-from typing import Any, Callable, ItemsView, Iterator
+from typing import Any, Callable, Iterator
 
 from flask import request
 
