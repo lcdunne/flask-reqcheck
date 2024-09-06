@@ -25,26 +25,29 @@ def validate(
     path_model: Type[BaseModel] | None = None,
     form_model: Type[BaseModel] | None = None,
 ) -> Callable:
-    """
-    A decorator to validate Flask request data against Pydantic models.
+    """A decorator to validate Flask request data against Pydantic models.
 
     This decorator validates the request data against the provided Pydantic models for
-    body, query, path, and form data. Inside a Flask route function that is decoarted
+    body, query, path, and form data. Inside a Flask route function that is decorated
     with this function, we can access the validated request instance using the
     :func:`~valid_request.get_valid_request` helper function.
 
-    :param body_model: The Pydantic model to validate the request body against.
-    :type body_model: Type[BaseModel] | None
-    :param query_model: The Pydantic model to validate the request query parameters
-        against.
-    :type query_model: Type[BaseModel] | None
-    :param path_model: The Pydantic model to validate the request path parameters
-        against.
-    :type path_model: Type[BaseModel] | None
-    :param form_model: The Pydantic model to validate the request form data against.
-    :type form_model: Type[BaseModel] | None
-    :return: A decorator function that validates the request data.
-    :rtype: Callable
+    Parameters
+    ----------
+    body_model : Type[BaseModel] | None, optional
+        The Pydantic model to validate the request body against.
+    query_model : Type[BaseModel] | None, optional
+        The Pydantic model to validate the request query parameters against.
+    path_model : Type[BaseModel] | None, optional
+        The Pydantic model to validate the request path parameters against.
+    form_model : Type[BaseModel] | None, optional
+        The Pydantic model to validate the request form data against.
+
+    Returns
+    -------
+    Callable
+        A decorator function that wraps and validates the Flask route function's
+        request data.
     """
 
     def decorator(f: Callable):
@@ -70,7 +73,7 @@ def validate(
                 validated.body = validate_body_data(body_model, request_body)
             elif form_model is not None:
                 if not request_is_form():
-                    abort(415)  # TODO: test
+                    abort(415)
                 form_data = extract_form_data_as_dict()
                 validated.form = validate_form_data(form_model, form_data)
 
@@ -84,14 +87,23 @@ def validate(
 
 
 def validate_path(path_model: Type[BaseModel] | None = None) -> Callable:
-    """
-    A decorator to validate Flask request path parameters against a Pydantic model.
+    """A decorator to validate Flask request path parameters against a Pydantic model.
 
-    :param path_model: The Pydantic model to validate the request path parameters
-        against.
-    :type path_model: Type[BaseModel] | None
-    :return: A decorator function that validates the request path parameters.
-    :rtype: Callable
+    If no URL path model is given, it will attempt to infer the types from the function
+    signature's type-hints. If no type hints are provided, then validation will be made
+    on Flask's converter types. If no type converters are defined in the path then the
+    types are just assumed to be strings.
+
+    Parameters
+    ----------
+    path_model : Type[BaseModel] or None, optional
+        The Pydantic model to validate the request path parameters against.
+
+    Returns
+    -------
+    Callable
+        A decorator function that wraps and validates the Flask route function's
+        request data.
     """
 
     def decorator(f: Callable):
@@ -120,14 +132,18 @@ def validate_path(path_model: Type[BaseModel] | None = None) -> Callable:
 
 
 def validate_query(query_model: Type[BaseModel]) -> Callable:
-    """
-    A decorator to validate Flask request query parameters against a Pydantic model.
+    """A decorator to validate Flask request query parameters against a Pydantic model.
 
-    :param query_model: The Pydantic model to validate the request query parameters
-        against.
-    :type query_model: Type[BaseModel] | None
-    :return: A decorator function that validates the request query parameters.
-    :rtype: Callable
+    Parameters
+    ----------
+    query_model : Type[BaseModel] or None
+        The Pydantic model to validate the request query parameters against.
+
+    Returns
+    -------
+    Callable
+        A decorator function that wraps and validates the Flask route function's
+        request data.
     """
 
     def decorator(f: Callable):
@@ -150,13 +166,18 @@ def validate_query(query_model: Type[BaseModel]) -> Callable:
 
 
 def validate_body(body_model: Type[BaseModel]) -> Callable:
-    """
-    A decorator to validate Flask request body against a Pydantic model.
+    """A decorator to validate Flask request body against a Pydantic model.
 
-    :param body_model: The Pydantic model to validate the request body against.
-    :type body_model: Type[BaseModel] | None
-    :return: A decorator function that validates the request body.
-    :rtype: Callable
+    Parameters
+    ----------
+    body_model : Type[BaseModel] or None
+        The Pydantic model to validate the request body against.
+
+    Returns
+    -------
+    Callable
+        A decorator function that wraps and validates the Flask route function's
+        request data.
     """
 
     def decorator(f: Callable):
@@ -174,13 +195,18 @@ def validate_body(body_model: Type[BaseModel]) -> Callable:
 
 
 def validate_form(form_model: Type[BaseModel]) -> Callable:
-    """
-    A decorator to validate Flask request form data against a Pydantic model.
+    """A decorator to validate Flask request form data against a Pydantic model.
 
-    :param form_model: The Pydantic model to validate the request form data against.
-    :type form_model: Type[BaseModel] | None
-    :return: A decorator function that validates the request form data.
-    :rtype: Callable
+    Parameters
+    ----------
+    form_model : Type[BaseModel] or None
+        The Pydantic model to validate the request form data against.
+
+    Returns
+    -------
+    Callable
+        A decorator function that wraps and validates the Flask route function's
+        request data.
     """
 
     def decorator(f: Callable):
