@@ -276,6 +276,11 @@ def test_posted_form_validated(client, form, expected_status_code):
     assert r.status_code == expected_status_code
 
 
+def test_not_a_form(client):
+    r = client.post("/form", json={"a": "Hello", "b": 21})
+    assert r.status_code == 415
+
+
 def test_posted_form_validated_return(client):
     form = {"a": "Hello", "b": 21}
 
