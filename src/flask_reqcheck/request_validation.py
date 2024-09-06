@@ -47,7 +47,7 @@ class PathParameterValidator:
         :rtype: BaseModel | None
         """
         if self.model is not None:
-            return as_model(self.view_args, self.model)
+            return self.model.model_validate(self.view_args)
         return self.validate_from_declaration()
 
     def validate_from_declaration(self) -> BaseModel:
@@ -125,7 +125,7 @@ class QueryParameterValidator:
         :return: The validated query parameters as a Pydantic model instance.
         :rtype: BaseModel | None
         """
-        return as_model(self.query_params, self.model)
+        return self.model.model_validate(self.query_params)
 
 
 class BodyDataValidator:
@@ -162,7 +162,7 @@ class BodyDataValidator:
             validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        return as_model(self.body, self.model)
+        return self.model.model_validate(self.body)
 
 
 class FormDataValidator:
@@ -205,7 +205,7 @@ class FormDataValidator:
             if validation fails or no model is provided.
         :rtype: BaseModel | None
         """
-        return as_model(self.form, self.model)
+        return self.model.model_validate(self.form)
 
 
 def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
@@ -224,25 +224,6 @@ def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
     """
     fields = {arg: (type(val), ...) for arg, val in kwargs.items()}
     return create_model(name, **fields)  # type: ignore
-
-
-def as_model(data: dict, model: Type[BaseModel]) -> BaseModel:
-    """
-    Attempts to validate the provided data against a Pydantic model.
-
-    This function takes a dictionary of data and an optional Pydantic model. If a model
-    is provided, it attempts to validate the data against the model. If validation is
-    successful, it returns an instance of the model. If validation fails or no model is
-    provided, it returns None or aborts the request with a 400 error.
-
-    :param data: The data to be validated.
-    :type data: dict
-    :param model: The Pydantic model to validate the data against.
-    :type model: Type[BaseModel]
-    :return: The validated data as a Pydantic model instance
-    :rtype: BaseModel | None
-    """
-    return model.model_validate(data)
 
 
 def validation_error_to_json(e: ValidationError):
