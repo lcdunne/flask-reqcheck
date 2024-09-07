@@ -188,15 +188,17 @@ def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
     and keyword arguments. The keyword arguments are used to define the fields of the
     model, where the key is the field name and the value is the field type.
 
-    :param name: The name of the dynamic model to be created.
-    :type name: str
-    :param kwargs: Keyword arguments defining the fields of the model.
-    :return: A dynamically created Pydantic BaseModel.
-    :rtype: Type[BaseModel]
+    Parameters
+    ----------
+    name : str
+        The name of the dynamic model to be created.
+    **kwargs
+        Keyword arguments defining the fields of the model.
+
+    Returns
+    -------
+    Type[BaseModel]
+        A dynamically created Pydantic BaseModel.
     """
     fields = {arg: (type(val), ...) for arg, val in kwargs.items()}
     return create_model(name, **fields)  # type: ignore
-
-
-def validation_error_to_json(e: ValidationError):
-    return json.loads(e.json())
