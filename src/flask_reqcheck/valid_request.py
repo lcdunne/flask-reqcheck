@@ -60,8 +60,6 @@ class ValidRequest:
         self.query_params = query_params
         self.body = body
         self.form = form
-        self.headers = headers
-        self.cookies = cookies
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the instance of ValidRequest to a dictionary.
