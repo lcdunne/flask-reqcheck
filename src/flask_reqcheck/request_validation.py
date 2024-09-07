@@ -1,314 +1,183 @@
 import json
 from typing import Any, Type
 
-from flask import abort, current_app, request
 from pydantic import BaseModel, TypeAdapter, ValidationError, create_model
 
 
-class PathParameterValidator:
+def validate_path_parameters(
+    view_args: dict[str, str],
+    model: Type[BaseModel] | None = None,
+    function_arg_types: dict[str, Any] | None = None,
+) -> BaseModel:
+    """Validates path parameters against a Pydantic model or dynamically based on
+    function argument types.
+
+    This function validates the path parameters provided in `view_args` against a
+    Pydantic model specified by `model`. If `model` is not provided, it dynamically
+    validates the path parameters based on the types specified in `function_arg_types`.
+    If `function_arg_types` is not provided, it infers the types from the values in
+    `view_args`.
+
+    Parameters
+    ----------
+    view_args : dict[str, str]
+        A dictionary containing the path parameter names as keys and their values as
+        strings.
+    model : Type[BaseModel] | None, optional
+        The Pydantic model to validate the path parameters against. If not provided,
+        dynamic validation is performed. Defaults to None.
+    function_arg_types : dict[str, Any] | None, optional
+        A dictionary specifying the expected types for each path parameter. If not
+        provided, types are inferred from `view_args`. Defaults to None.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary containing the validated path parameters.
     """
-    A class for validating path parameters.
+    if model is not None:
+        return model.model_validate(view_args)
+    return _validate_path_parameters_from_function(view_args, function_arg_types or {})
 
-    :param model: The Pydantic model to validate the path parameters against.
-    :type model: Type[BaseModel] | None
-    :param function_arg_types: A mapping of function argument names to their types.
-    :type function_arg_types: dict[str, Any] | None
+
+def _validate_path_parameters_from_function(
+    view_args: dict[str, str],
+    function_arg_types: dict[str, Any] | None = None,
+) -> BaseModel:
+    """Validates path parameters based on the types specified in the function signature.
+
+    This function validates the path parameters provided in `view_args` against the
+    types specified in `function_arg_types`. It dynamically creates a Pydantic model
+    based on the validated path parameters and then validates the path parameters
+    against this model.
+
+    Parameters
+    ----------
+    view_args : dict[str, str]
+        A dictionary containing the path parameter names as keys and their values as
+        strings.
+    function_arg_types : dict[str, Any] | None, optional
+        A dictionary specifying the expected types for each path parameter. If not
+        provided, the type of the value in `view_args` is used.
+
+    Returns
+    -------
+    BaseModel
+        A Pydantic model instance containing the validated path parameters. The model is
+        dynamically created from the `validated_path_params`.
     """
-
-    def __init__(
-        self,
-        model: Type[BaseModel] | None = None,
-        function_arg_types: dict[str, Any] | None = None,
-    ):
-        self.model = model
-        self.function_arg_types = function_arg_types or {}
-
-    def validate(self) -> BaseModel | None:
-        """
-        Validate path parameters.
-
-        This method retrieves the path parameters and attempts to validate them. If a
-        model is provided, it validates the parameters against the model. If no model is
-        provided, it validates the parameters against the type hints in the function
-        declaration. If no type hints are given, flask's default validation will be
-        used as a fallback.
-
-        :param f: The function to validate against if no model is provided.
-        :type f: Callable
-
-        :return: The validated path parameters as a BaseModel instance, or None if no
-            parameters are found.
-        :rtype: BaseModel | None
-        """
-        path_params = self.get_args_from_route_declaration()  # arg: value
-        if path_params:
-            if self.model is not None:
-                return self.validate_from_model(path_params)
-            return self.validate_from_declaration(path_params)
-        return
-
-    def get_args_from_route_declaration(self) -> dict[str, Any] | None:
-        """
-        Get all path parameters.
-
-        :return: A dictionary containing path parameter names and their corresponding values provided in the request.
-        :rtype: dict[str, Any] | None
-        """
-        return request.view_args
-
-    def validate_from_model(self, path_params: dict[str, Any]) -> BaseModel | None:
-        """
-        Validate path parameters against a provided model.
-
-        This method attempts to validate the path parameters against the model provided
-        in the constructor. If the validation is successful, it returns a BaseModel
-        instance representing the validated parameters. If the validation fails or if no
-        model is provided, it returns None.
-
-        :param path_params: The path parameters to validate.
-        :type path_params: dict[str, Any]
-        :return: The validated path parameters as a BaseModel instance, or None if validation fails.
-        :rtype: BaseModel | None
-        """
-        return as_model(path_params, self.model)
-
-    def validate_from_declaration(
-        self,
-        path_params: dict[str, Any],
-    ) -> BaseModel:
-        """
-        Validate path parameters from the function declaration.
-
-        Uses the type hints in the function signature to validate the request url
-        parameters.
-
-        :param path_params: The path parameters provided in the request.
-        :type path_params: dict[str, Any]
-
-        :return: The Pydantic schema that defines the valid path parameters.
-        :rtype: BaseModel
-        """
-        validated_path_params = self.validate_path_params(
-            path_params, self.function_arg_types
-        )
-        path_model = self.model or create_dynamic_model(
-            "PathParams", **validated_path_params
-        )
-
-        return path_model.model_validate(validated_path_params)
-
-    def validate_path_params(
-        self,
-        path_params: dict[str, Any],
-        function_arg_types: dict[str, Type],
-    ) -> dict[str, Any]:
-        """
-        Validates path parameters against the expected types from the function
-        declaration.
-
-        This method iterates over the provided path parameters, determines the expected
-        type for each parameter based on the function's type hints, and validates the
-        value against that type. The validated parameters are then returned as a
-        dictionary.
-
-        :param path_params: The path parameters to validate.
-        :type path_params: dict[str, Any]
-        :param function_arg_types: The expected types for each parameter based on the
-            function's type hints.
-        :type function_arg_types: dict[str, Type]
-        :return: A dictionary containing the validated path parameters.
-        :rtype: dict[str, Any]
-        """
-        validated_path_params = {}
-        for arg, value in path_params.items():
-            target_type = self.get_target_type(arg, value, function_arg_types)
-            validated_value = self.validate_value(value, target_type)
-            validated_path_params[arg] = validated_value
-        return validated_path_params
-
-    def get_target_type(
-        self, arg: str, value: Any, function_arg_types: dict[str, Type]
-    ) -> Type:
-        """
-        Retrieves the expected type for a given argument based on the function's
-        type hints. If no type hint is specified for the argument, it defaults to the
-        type of the provided value.
-
-        :param arg: The name of the argument for which to retrieve the expected type.
-        :type arg: str
-        :param value: The value of the argument, used to determine its type if no type
-            hint is available.
-        :type value: Any
-        :param function_arg_types: A dictionary containing the expected types for each
-            argument based on the function's type hints.
-        :type function_arg_types: dict[str, Type]
-        :return: The expected type for the given argument, or the type of the value if
-            no type hint is specified.
-        :rtype: Type
-        """
-        return function_arg_types.get(arg, type(value))
-
-    def validate_value(self, value: Any, target_type: Type) -> Any:
-        """
-        Validate the value against the target type using Pydantic's TypeAdapter.
-
-        :param value: The value to be validated.
-        :type value: Any
-        :param target_type: The type to validate the value against.
-        :type target_type: Type
-        :return: The validated value.
-        :rtype: Any
-        """
-        try:
-            return TypeAdapter(target_type).validate_python(value)
-        except ValidationError as e:
-            abort(400, validation_error_to_json(e))
+    validated_path_params = _infer_and_validate_path_param_types(
+        view_args, function_arg_types
+    )
+    path_model = create_dynamic_model("PathParams", **validated_path_params)
+    return path_model.model_validate(validated_path_params)
 
 
-class QueryParameterValidator:
+def _infer_and_validate_path_param_types(
+    view_args: dict[str, Any], function_arg_types: dict[str, Any]
+) -> dict[str, Any]:
+    """Validates path parameters based on the types specified in the function signature.
+
+    This function iterates over the provided `view_args` and for each argument, it
+    determines the target type to validate against. If a type is explicitly specified
+    in `function_arg_types`, it uses that; otherwise, it infers the type from the value
+    itself. It then validates the value against the determined type and stores the
+    validated value. Note that in the case that the type is not specified in
+    `function_arg_types`, if the Flask endpoint url definition uses Flask's
+    type adapters, then this will be used - otherwise, the default will be strings.
+
+    Parameters
+    ----------
+    view_args : dict[str, Any]
+        A dictionary containing the path parameter names as keys and their values as
+        strings or other types.
+    function_arg_types : dict[str, Any]
+        A dictionary specifying the expected types for each path parameter.
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary containing the validated path parameters.
     """
-    Validates query parameters against a Pydantic model.
+    validated_path_params = {}
+    for arg, value in view_args.items():
+        target_type = function_arg_types.get(arg, type(value))  # Infers here
+        validated_path_params[arg] = TypeAdapter(target_type).validate_python(value)
+    return validated_path_params
 
-    This class is responsible for extracting query parameters from the Flask request,
-    and validating them against a provided Pydantic model. If no model is provided,
-    it logs a warning and returns without validation.
+
+def _validate_x(model: Type[BaseModel], data: dict[str, Any]) -> BaseModel:
+    """Validates the provided data against the given Pydantic model.
+
+    Parameters
+    ----------
+    model : Type[BaseModel]
+        The Pydantic model to validate the data against.
+    data : dict[str, Any]
+        The data to be validated.
+
+    Returns
+    -------
+    BaseModel
+        The validated data as a Pydantic model instance .
     """
-
-    def __init__(self, model: Type[BaseModel] | None = None):
-        """
-        Initializes the QueryParameterValidator with an optional Pydantic model.
-
-        :param model: The Pydantic model to validate query parameters against.
-        :type model: Type[BaseModel] | None
-        """
-        self.model = model
-
-    def validate(self) -> BaseModel | None:
-        """
-        Validates query parameters against the provided model.
-
-        Extracts query parameters from the Flask request, and attempts to validate them
-        against the model provided during initialization. If no model is provided, logs
-        a warning and returns without validation.
-
-        :return: The validated query parameters as a Pydantic model instance, or None if
-            validation fails or no model is provided.
-        :rtype: BaseModel | None
-        """
-        query_params = self.extract_query_params_as_dict()
-        if not query_params:
-            return
-
-        if self.model is None:
-            current_app.logger.warning(
-                "Query parameters were submitted, but no `query_model` was "
-                "added for validation"
-            )
-            return
-
-        return as_model(query_params, self.model)
-
-    def extract_query_params_as_dict(self) -> dict:
-        """
-        Extracts query parameters from the Flask request as a dictionary.
-
-        This method iterates over the query parameters in the Flask request, and
-        converts them into a dictionary. If a parameter has multiple values, it is
-        stored as a list in the dictionary.
-
-        :return: A dictionary containing the query parameters.
-        :rtype: dict
-        """
-        return {
-            key: values[0] if len(values) == 1 else values
-            for key, values in request.args.lists()
-        }
+    return model.model_validate(data)
 
 
-class BodyDataValidator:
+def validate_query_parameters(
+    model: Type[BaseModel], query_parameters: dict[str, Any]
+) -> BaseModel:
+    """Validates query parameters against a given Pydantic model.
+
+    Parameters
+    ----------
+    model : Type[BaseModel]
+        The Pydantic model to validate the query parameters against.
+    query_parameters : dict[str, Any]
+        The query parameters to be validated.
+
+    Returns
+    -------
+    BaseModel
+        The validated query parameters as a Pydantic model instance.
     """
-    Validates the body data of a Flask request against a Pydantic model.
+    return _validate_x(model, query_parameters)
 
-    This class is designed to validate the body data of a Flask request against a
-    provided Pydantic model. It checks if the request has a body, if the body is in
-    JSON format, and if the model is provided. If all conditions are met, it attempts
-    to validate the request body against the model and returns the validated data.
-    If any condition fails, it returns None or aborts the request with a 400 error.
+
+def validate_body_data(model: Type[BaseModel], body_data: dict[str, Any]) -> BaseModel:
+    """Validates the provided body data against the given Pydantic model.
+
+    Parameters
+    ----------
+    model : Type[BaseModel]
+        The Pydantic model to validate the body data against.
+    body_data : dict[str, Any]
+        The body data to be validated.
+
+    Returns
+    -------
+    BaseModel
+        The validated body data as a Pydantic model instance.
     """
-
-    def __init__(self, model: Type[BaseModel] | None = None):
-        """
-        Initializes the BodyDataValidator with an optional Pydantic model.
-
-        :param model: The Pydantic model to validate the request body against.
-        :type model: Type[BaseModel] | None
-        """
-        self.model = model
-
-    def validate(self) -> BaseModel | None:
-        """
-        Validates the request body against the provided model.
-
-        This method checks if the request has a body, if the body is in JSON format,
-        and if the model is provided. If all conditions are met, it attempts to validate
-        the request body against the model and returns the validated data. If any
-        condition fails, it returns None or aborts the request with a 400 error.
-
-        :return: The validated request body as a Pydantic model instance, or None if
-            validation fails or no model is provided.
-        :rtype: BaseModel | None
-        """
-        if not request_has_body() or request.form:
-            return
-
-        request_body = request.get_json()  # Raises 415 if not json
-        if request_body and self.model is None:
-            # TODO: Needs to have the JSON response
-            abort(400, "Unexpected data was provided")
-
-        return as_model(request_body, self.model)
+    return _validate_x(model, body_data)
 
 
-class FormDataValidator:
+def validate_form_data(model: Type[BaseModel], form_data: dict[str, Any]) -> BaseModel:
+    """Validates the provided form data against the given Pydantic model.
+
+    Parameters
+    ----------
+    model : Type[BaseModel]
+        The Pydantic model to validate the form data against.
+    form_data : dict[str, Any]
+        The form data to be validated.
+
+    Returns
+    -------
+    BaseModel
+        The validated form data as a Pydantic model instance.
     """
-    Validates the form data of a Flask request against a Pydantic model.
-
-    This class is designed to validate the form data of a Flask request against a
-    provided Pydantic model. It checks if the request has form data and if the
-    model is provided. If both conditions are met, it attempts to validate the
-    request form data against the model and returns the validated data. If any
-    condition fails, it returns None or aborts the request with a 400 error.
-
-    :param model: The Pydantic model to validate the request form data against.
-    :type model: Type[BaseModel] | None
-
-    :return: The validated request form data as a Pydantic model instance, or None if
-        validation fails or no model is provided.
-    :rtype: BaseModel | None
-    """
-
-    def __init__(self, model: Type[BaseModel] | None = None):
-        """
-        Initializes the FormDataValidator with an optional Pydantic model.
-
-        :param model: The Pydantic model to validate the request form data against.
-        :type model: Type[BaseModel] | None
-        """
-        self.model = model
-
-    def validate(self) -> BaseModel | None:
-        """
-        Validates the request form data against the provided model.
-
-        This method attempts to validate the request form data against the model
-        and returns the validated data. If validation fails or no model is provided,
-        it returns None or aborts the request with a 400 error.
-
-        :return: The validated request form data as a Pydantic model instance, or None if
-            validation fails or no model is provided.
-        :rtype: BaseModel | None
-        """
-        return as_model(request.form, self.model)
+    return _validate_x(model, form_data)
 
 
 def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
@@ -329,45 +198,5 @@ def create_dynamic_model(name: str, **kwargs) -> Type[BaseModel]:
     return create_model(name, **fields)  # type: ignore
 
 
-def as_model(data: dict, model: Type[BaseModel] | None) -> BaseModel | None:
-    """
-    Attempts to validate the provided data against a Pydantic model.
-
-    This function takes a dictionary of data and an optional Pydantic model. If a model
-    is provided, it attempts to validate the data against the model. If validation is
-    successful, it returns an instance of the model. If validation fails or no model is
-    provided, it returns None or aborts the request with a 400 error.
-
-    :param data: The data to be validated.
-    :type data: dict
-    :param model: The Pydantic model to validate the data against.
-    :type model: Type[BaseModel] | None
-    :return: The validated data as a Pydantic model instance, or None if validation
-        fails or no model is provided.
-    :rtype: BaseModel | None
-    """
-    if model is not None:
-        try:
-            # TODO: Find some way to fail here if an unrecognised parameter is provided.
-            return model(**data)
-        except ValidationError as e:
-            # Requires ability to register a custom error handler?
-            abort(400, validation_error_to_json(e))
-    return None
-
-
 def validation_error_to_json(e: ValidationError):
     return json.loads(e.json())
-
-
-def request_has_body() -> bool:
-    """
-    Checks if the request has a body.
-
-    According to RFC7230 - 3.3. Message Body, the presence of a body in a request is
-    signaled by the presence of a Content-Length or Transfer-Encoding header field.
-
-    :return: True if the request has a body, False otherwise.
-    :rtype: bool
-    """
-    return "Transfer-Encoding" in request.headers or "Content-Length" in request.headers

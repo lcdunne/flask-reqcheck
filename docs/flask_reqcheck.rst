@@ -4,10 +4,10 @@ flask\_reqcheck package
 Submodules
 ----------
 
-flask\_reqcheck.decorator module
---------------------------------
+flask\_reqcheck.decorators module
+---------------------------------
 
-.. automodule:: flask_reqcheck.decorator
+.. automodule:: flask_reqcheck.decorators
    :members:
    :undoc-members:
    :show-inheritance:

@@ -16,6 +16,9 @@ class QueryModel(BaseModel):
     c: float | None = None
     d: uuid.UUID | None = None
     arr: list[int] | None = None
+
+
+class QueryModelWithRequred(QueryModel):
     x: str
 
 
