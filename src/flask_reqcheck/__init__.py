@@ -1,4 +1,4 @@
-from .decorator import (
+from .decorators import (
     validate,
     validate_body,
     validate_form,
