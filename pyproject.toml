@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flask-reqcheck"
-version = "0.0.8"
+version = "0.0.9"
 description = "Request validation for Flask applications using Pydantic."
 keywords = ["Python", "Flask", "validation"]
 authors = [{name = "Lewis Dunne"}]
