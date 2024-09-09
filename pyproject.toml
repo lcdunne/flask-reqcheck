@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flask-reqcheck"
-version = "0.0.9"
+version = "0.0.10"
 description = "Request validation for Flask applications using Pydantic."
 keywords = ["Python", "Flask", "validation"]
 authors = [{name = "Lewis Dunne"}]
@@ -30,6 +30,12 @@ dev = [
     "Pallets-Sphinx-Themes",
     "pytest",
     "python-dotenv",
+    "sphinx",
+]
+
+docs = [
+    "numpydoc",
+    "Pallets-Sphinx-Themes",
     "sphinx"
 ]
 
