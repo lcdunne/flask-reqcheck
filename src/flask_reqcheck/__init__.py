@@ -5,4 +5,5 @@ from .decorators import (
     validate_path,
     validate_query,
 )
+from .extension import ReqCheck
 from .valid_request import get_valid_request
