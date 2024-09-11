@@ -1,7 +1,35 @@
 Usage
 =====
 
-Flask-Reqcheck is very straightforward to use. The main two objects of interest are the ``@validate`` decorator and the ``get_valid_request`` function.
+Flask-Reqcheck is very straightforward to use. The main objects of interest are the ``ReqCheck`` extension class, the ``@validate`` decorator, and the ``get_valid_request`` function.
+
+The ``ReqCheck`` extension is initialised like all other Flask extensions during the application setup (see example below). However it is only used for convenience to register a default 
+validation error handler - it is not currently an essential step and can be skipped entirely in favour of your own error handler.
+
+Initialise the extension:
+
+.. code-block:: python
+    
+    from flask import Flask
+    from flask_reqcheck import ReqCheck
+
+    app = Flask(__name__)
+    reqcheck = ReqCheck(app)
+
+Or do that with the factory approach and lazy initialisation:
+
+.. code-block:: python
+
+    from flask import Flask
+    from flask_reqcheck import ReqCheck
+
+    reqcheck = ReqCheck()
+
+    def init_app():
+        app = Flask(__name__)
+        reqcheck.init_app(app)
+        ...
+        return app()
 
 The ``validate`` decorator is for annotating flask route functions. When you do this, you provide a Pydantic model for the components of the HTTP 
 request that you would like to validate, such as ``body``, ``query``, ``path``, etc. If the request inputs fail to match the corresponding model then 
@@ -13,6 +41,9 @@ Aside from ``@validate``, you can use the more specific decorators - ``@validate
 The ``get_valid_request`` is a helper function for use *within* the Flask route function. When using ``@validate``, a new instance of the ``ValidRequest`` class 
 will be created and stored for the current request context. We can use ``get_valid_request`` to retrieve that object and access its attributes, which correspond 
 to the different HTTP components that were validated.
+
+
+
 
 For example:
 

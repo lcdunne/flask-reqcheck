@@ -10,6 +10,17 @@ def default_validation_error_handler(error: ValidationError):
 
 
 class ReqCheck:
+    """The main Flask-ReqCheck extension class.
+
+    Initialise this object like any other Flask extension. Supports the factory pattern.
+    Initialising this will add a convenience error handler to the `ValidationError`.
+    This is not strictly necessary - if using custom error handlers in your application,
+    you may choose to simply register your own for `pydantic.ValidationError`. In that
+    case you can skip initialising this extension entirely. Alternatively, you can use
+    the `register_validation_error_handler` convenience method of this class to override
+    the default.
+    """
+
     def __init__(self, app: Flask | None = None):
         self._default_validation_error_handler = default_validation_error_handler
 
@@ -28,4 +39,13 @@ class ReqCheck:
         self.register_validation_error_handler(app, default_validation_error_handler)
 
     def register_validation_error_handler(self, app: Flask, f: Callable) -> None:
+        """Add a custom handler for `ValidationError`.
+
+        Parameters
+        ----------
+        app : Flask
+            The Flask application instance.
+        f : Callable
+            The callback function to run when the error is encountered.
+        """
         app.register_error_handler(ValidationError, f)
