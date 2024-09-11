@@ -1,6 +1,11 @@
 API
 ===
 
+Extension Class
+---------------
+
+.. automodule:: flask_reqcheck.extension
+    :members:
 
 Decorator Functions
 -------------------

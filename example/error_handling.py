@@ -1,13 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from http import HTTPStatus
+
+from pydantic import ValidationError
 
 
-# Specific function to return error responses in JSON format
-def handle_errors_with_json(error):
+def custom_validation_error_handler(error: ValidationError):
     return {
-        "error": {
-            "error": error.name,
-            "detail": error.description,
-            "code": error.code,
-        },
-        "timestamp": datetime.now(),
-    }, error.code
+        "errors": error.errors(),
+        "time": datetime.now(timezone.utc),
+    }, HTTPStatus.UNPROCESSABLE_ENTITY
