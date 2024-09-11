@@ -15,33 +15,6 @@ class ValidRequest:
     function to retrieve an instance of this class with the validated data.
 
     Parameters
-    ----------
-    path_params : BaseModel | None
-        The validated path parameters of the request.
-    query_params : BaseModel | None
-        The validated query parameters of the request.
-    body : BaseModel | None
-        The validated body of the request.
-    form : BaseModel | None
-        The validated form data of the request.
-    headers : BaseModel | None
-        The validated headers of the request.
-    cookies : BaseModel | None
-        The validated cookies of the request.
-    """
-
-    def __init__(
-        self,
-        path_params: BaseModel | None = None,
-        query_params: BaseModel | None = None,
-        body: BaseModel | None = None,
-        form: BaseModel | None = None,
-        headers: BaseModel | None = None,
-        cookies: BaseModel | None = None,
-    ):
-        """Initializes a ValidRequest instance with its components.
-
-        Parameters
         ----------
         path_params : BaseModel | None
             The validated path parameters of the request.
@@ -51,11 +24,15 @@ class ValidRequest:
             The validated body of the request.
         form : BaseModel | None
             The validated form data of the request.
-        headers : BaseModel | None
-            The validated headers of the request.
-        cookies : BaseModel | None
-            The validated cookies of the request.
-        """
+    """
+
+    def __init__(
+        self,
+        path_params: BaseModel | None = None,
+        query_params: BaseModel | None = None,
+        body: BaseModel | None = None,
+        form: BaseModel | None = None,
+    ):
         self.path_params = path_params
         self.query_params = query_params
         self.body = body

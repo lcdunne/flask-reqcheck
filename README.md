@@ -3,7 +3,7 @@
 **Flask-Reqcheck** lets you validate requests in your Flask applications. With a simple 
 decorator and some [Pydantic](https://docs.pydantic.dev/latest/) models, you can quickly 
 validate incoming request bodies, query parameters, and url path parameters, reducing 
-boilerplate code and minimizing errors.
+boilerplate code and minimising errors.
 
 ## Installation
 
@@ -15,7 +15,36 @@ pip install flask-reqcheck
 
 ## Usage
 
-Flask-Reqcheck is very straightforward to use. The main two objects of interest are the `@validate` decorator and the `get_valid_request` function.
+Flask-Reqcheck is very straightforward to use. The main objects of interest are the `ReqCheck` extension class, the `@validate` decorator, and the `get_valid_request` function.
+
+The `ReqCheck` extension is initialised like all other Flask extensions during the application setup (see example below). However it is only used for convenience to register a default 
+validation error handler - it is not currently an essential step and can be skipped entirely in favour of your own error handler.
+
+Initialise the extension:
+```python
+
+from flask import Flask
+from flask_reqcheck import ReqCheck
+
+app = Flask(__name__)
+reqcheck = ReqCheck(app)
+```
+
+Or do that with the factory approach and lazy initialisation:
+
+```python
+
+from flask import Flask
+from flask_reqcheck import ReqCheck
+
+reqcheck = ReqCheck()
+
+def init_app():
+    app = Flask(__name__)
+    reqcheck.init_app(app)
+    ...
+    return app()
+```
 
 The `validate` decorator is for annotating flask route functions. When you do this, you provide a Pydantic model for the components of the HTTP 
 request that you would like to validate, such as `body`, `query`, `path`, etc. If the request inputs fail to match the corresponding model then 
@@ -56,8 +85,6 @@ More specific decorators can also be used:
 - `@validate_form`
 - `@validate_path`
 - `@validate_query`
-
-More to come.
 
 For a full example, see the [examples directory in the Flask-Reqcheck repository](/example/).
 
